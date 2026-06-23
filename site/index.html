@@ -384,6 +384,196 @@
       font-size: 11px;
     }
 
+    .showcase-section {
+      min-height: 118vh;
+      display: grid;
+      align-items: start;
+      padding: 112px 0 120px;
+      scroll-margin-top: 18px;
+    }
+
+    .cinema-copy {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin-bottom: clamp(-124px, -8vw, -72px);
+      opacity: 1;
+      transform: translateY(0);
+      animation: launchRise 780ms ease-out both;
+      transition: opacity 700ms ease, transform 700ms ease;
+    }
+
+    .cinema-copy.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .cinema-copy h2 {
+      margin: 0;
+      max-width: 1040px;
+      font-size: clamp(54px, 8.4vw, 128px);
+      line-height: 0.82;
+      letter-spacing: -0.062em;
+      text-wrap: balance;
+    }
+
+    .cinema-copy p {
+      max-width: 560px;
+      margin: 24px 0 0 clamp(24px, 12vw, 190px);
+      color: var(--soft);
+      font-size: 20px;
+      line-height: 1.58;
+    }
+
+    .cinema-visual {
+      position: relative;
+      width: min(1380px, calc(100vw - 32px));
+      min-height: clamp(560px, 70vw, 760px);
+      margin-left: 50%;
+      margin-top: 0;
+      transform: translateX(-50%) translateY(0) scale(1);
+      opacity: 1;
+      border: 1px solid rgba(215, 255, 122, 0.22);
+      border-radius: 54px;
+      background:
+        radial-gradient(circle at 22% 24%, rgba(215, 255, 122, 0.22), transparent 23rem),
+        radial-gradient(circle at 82% 18%, rgba(125, 255, 202, 0.16), transparent 26rem),
+        linear-gradient(145deg, rgba(255,255,255,0.11), rgba(255,255,255,0.025));
+      box-shadow: 0 48px 140px rgba(0,0,0,0.55);
+      overflow: hidden;
+      animation: launchScale 920ms cubic-bezier(.2,.8,.2,1) both;
+      transition: opacity 900ms ease, transform 900ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    .cinema-visual.revealed {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+
+    .cinema-visual::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 86px 86px;
+      mask-image: radial-gradient(circle at 58% 44%, black 0%, transparent 72%);
+      pointer-events: none;
+    }
+
+    .cinema-visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.16) 45%, transparent 62%);
+      transform: translateX(-120%);
+      animation: sweep 7s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .mega-screen {
+      position: absolute;
+      left: clamp(22px, 4vw, 70px);
+      right: clamp(22px, 4vw, 70px);
+      bottom: clamp(26px, 4.2vw, 76px);
+      height: 58%;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 78% 24%, rgba(215,255,122,0.18), transparent 22rem),
+        rgba(5,5,6,0.66);
+      backdrop-filter: blur(18px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 34px 96px rgba(0,0,0,0.42);
+    }
+
+    .mega-readout {
+      position: absolute;
+      left: clamp(32px, 5vw, 88px);
+      top: clamp(28px, 5vw, 86px);
+      z-index: 2;
+    }
+
+    .mega-readout span {
+      display: block;
+      margin-bottom: 12px;
+      color: var(--gold);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .mega-readout strong {
+      display: block;
+      font-size: clamp(76px, 13vw, 190px);
+      line-height: 0.78;
+      letter-spacing: -0.075em;
+    }
+
+    .mega-readout small {
+      display: block;
+      width: min(420px, 68vw);
+      margin-top: 28px;
+      color: var(--soft);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .signal-arc {
+      position: absolute;
+      right: clamp(26px, 5vw, 92px);
+      top: clamp(34px, 5vw, 82px);
+      width: min(460px, 42vw);
+      aspect-ratio: 1;
+      border: 1px solid rgba(215,255,122,0.24);
+      border-radius: 50%;
+      animation: spin 26s linear infinite;
+    }
+
+    .signal-arc::before,
+    .signal-arc::after {
+      content: "";
+      position: absolute;
+      inset: 14%;
+      border: 1px solid rgba(125,255,202,0.18);
+      border-radius: 50%;
+    }
+
+    .signal-arc::after {
+      inset: 31%;
+      border-color: rgba(255,255,255,0.14);
+    }
+
+    .media-chip {
+      position: absolute;
+      z-index: 3;
+      width: clamp(168px, 16vw, 240px);
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 22px;
+      background: rgba(5,5,6,0.58);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.34);
+    }
+
+    .media-chip b {
+      display: block;
+      font-size: clamp(28px, 4vw, 54px);
+      line-height: 0.9;
+      letter-spacing: -0.055em;
+    }
+
+    .media-chip span {
+      display: block;
+      margin-top: 9px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .media-chip.one { right: 8%; bottom: 16%; }
+    .media-chip.two { right: 29%; top: 11%; }
+    .media-chip.three { left: 11%; bottom: 12%; }
+
     .section {
       min-height: 100vh;
       display: grid;
@@ -800,6 +990,21 @@
       to { transform: rotate(360deg); }
     }
 
+    @keyframes launchRise {
+      from { opacity: 0; transform: translateY(34px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes launchScale {
+      from { opacity: 0; transform: translateX(-50%) translateY(46px) scale(0.96); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    }
+
+    @keyframes sweep {
+      0%, 58% { transform: translateX(-120%); }
+      82%, 100% { transform: translateX(120%); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -844,6 +1049,26 @@
       .api-copy,
       .api-card {
         transform: none;
+      }
+
+      .cinema-copy p {
+        margin-left: 0;
+      }
+
+      .cinema-visual {
+        min-height: 560px;
+      }
+
+      .media-chip.one,
+      .media-chip.two,
+      .media-chip.three {
+        position: relative;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        left: auto;
+        width: 100%;
+        margin: 12px auto 0;
       }
     }
 
@@ -903,6 +1128,7 @@
       </span>
     </a>
     <div class="nav-links">
+      <a href="#showcase">Showcase</a>
       <a href="#forecast">Forecast</a>
       <a href="#engine">Engine</a>
       <a href="#api">Paid API</a>
@@ -939,6 +1165,28 @@
           <div class="spec-float three"><b>1</b><span>budget contract</span></div>
           <div class="scroll-cue">scroll to reveal</div>
         </div>
+      </div>
+    </section>
+
+    <section class="showcase-section" id="showcase">
+      <div class="wrap">
+        <div class="cinema-copy">
+          <span class="section-label">00 / Big picture</span>
+          <h2>See the budget before the work begins.</h2>
+          <p>A launch-style product surface for the invisible part of agent execution: risk, cost, boundaries, and the first context path.</p>
+        </div>
+      </div>
+      <div class="cinema-visual" aria-label="Large animated product image">
+        <div class="signal-arc"></div>
+        <div class="mega-readout" data-depth="0.18">
+          <span>LIVE PREFLIGHT IMAGE</span>
+          <strong>18k-64k</strong>
+          <small>One estimate becomes a full decision surface before Codex reads broadly or runs expensive commands.</small>
+        </div>
+        <div class="mega-screen" data-depth="-0.1"></div>
+        <div class="media-chip one" data-depth="0.32"><b>ROI</b><span>execute now or split first</span></div>
+        <div class="media-chip two" data-depth="0.44"><b>14</b><span>file-read contract</span></div>
+        <div class="media-chip three" data-depth="0.24"><b>80</b><span>log-line ceiling</span></div>
       </div>
     </section>
 
@@ -1057,7 +1305,8 @@
   <script>
     const progress = document.querySelector(".progress");
     const chapters = Array.from(document.querySelectorAll(".chapter"));
-    const features = Array.from(document.querySelectorAll(".feature"));
+    const revealItems = Array.from(document.querySelectorAll(".feature"));
+    const parallaxItems = Array.from(document.querySelectorAll("[data-depth]"));
     const rangeText = document.querySelector("#rangeText");
     const riskText = document.querySelector("#riskText");
     const roiText = document.querySelector("#roiText");
@@ -1110,7 +1359,7 @@
       });
     }, { threshold: 0.24 });
 
-    features.forEach((feature) => revealObserver.observe(feature));
+    revealItems.forEach((item) => revealObserver.observe(item));
 
     const countTargets = Array.from(document.querySelectorAll("[data-count]"));
     const countObserver = new IntersectionObserver((entries) => {
@@ -1137,7 +1386,18 @@
       progress.style.setProperty("--progress", `${pct}%`);
     }
 
+    function moveParallax(event) {
+      const x = (event.clientX / window.innerWidth - 0.5) * 2;
+      const y = (event.clientY / window.innerHeight - 0.5) * 2;
+      parallaxItems.forEach((item) => {
+        const depth = Number(item.dataset.depth || 0);
+        item.style.transform = `translate3d(${x * depth * 24}px, ${y * depth * 18}px, 0)`;
+      });
+    }
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.addEventListener("scroll", updateProgress, { passive: true });
+    if (!reducedMotion) window.addEventListener("pointermove", moveParallax, { passive: true });
     updateProgress();
     setChapter(chapters[0]);
   </script>
