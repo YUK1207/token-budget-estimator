@@ -472,8 +472,17 @@
       pointer-events: none;
     }
 
+    .three-stage {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.92;
+    }
+
     .mega-screen {
       position: absolute;
+      z-index: 2;
       left: clamp(22px, 4vw, 70px);
       right: clamp(22px, 4vw, 70px);
       bottom: clamp(26px, 4.2vw, 76px);
@@ -520,6 +529,7 @@
 
     .signal-arc {
       position: absolute;
+      z-index: 3;
       right: clamp(26px, 5vw, 92px);
       top: clamp(34px, 5vw, 82px);
       width: min(460px, 42vw);
@@ -1177,6 +1187,7 @@
         </div>
       </div>
       <div class="cinema-visual" aria-label="Large animated product image">
+        <canvas class="three-stage" id="threeScene" aria-hidden="true"></canvas>
         <div class="signal-arc"></div>
         <div class="mega-readout" data-depth="0.18">
           <span>LIVE PREFLIGHT IMAGE</span>
@@ -1301,6 +1312,197 @@
       <span>Forecast. Assess ROI. Contract. Diet context.</span>
     </div>
   </footer>
+
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+    const canvas = document.querySelector("#threeScene");
+    const host = canvas?.closest(".cinema-visual");
+    if (canvas && host) {
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+      camera.position.set(0, 0.4, 8.2);
+
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      const root = new THREE.Group();
+      scene.add(root);
+
+      const accent = new THREE.Color("#d7ff7a");
+      const mint = new THREE.Color("#7dffca");
+      const blue = new THREE.Color("#9bbcff");
+
+      const core = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(1.16, 5),
+        new THREE.MeshPhysicalMaterial({
+          color: "#ecffd0",
+          emissive: "#7dffca",
+          emissiveIntensity: 0.36,
+          roughness: 0.22,
+          metalness: 0.08,
+          transmission: 0.22,
+          thickness: 0.55
+        })
+      );
+      root.add(core);
+
+      const halo = new THREE.Mesh(
+        new THREE.SphereGeometry(1.78, 48, 48),
+        new THREE.MeshBasicMaterial({ color: "#7dffca", transparent: true, opacity: 0.075, blending: THREE.AdditiveBlending })
+      );
+      root.add(halo);
+
+      const ringMaterial = new THREE.MeshBasicMaterial({ color: "#d7ff7a", transparent: true, opacity: 0.22 });
+      const rings = [
+        [2.55, 0.006, 0.5, 0.1, 0.1],
+        [3.12, 0.005, 1.15, 0.35, 0.7],
+        [3.78, 0.004, 1.35, -0.2, -0.42]
+      ].map(([radius, tube, x, y, z]) => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 16, 180), ringMaterial.clone());
+        ring.rotation.set(x, y, z);
+        root.add(ring);
+        return ring;
+      });
+
+      const moduleData = [
+        ["Forecast", accent, new THREE.Vector3(-2.8, 1.3, 0.55)],
+        ["ROI", mint, new THREE.Vector3(2.78, 1.02, -0.1)],
+        ["Contract", blue, new THREE.Vector3(2.25, -1.6, 0.45)],
+        ["Diet", accent, new THREE.Vector3(-2.5, -1.42, -0.25)]
+      ];
+
+      const nodes = moduleData.map(([label, color, base]) => {
+        const group = new THREE.Group();
+        group.userData.base = base;
+        const shell = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 24, 24),
+          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.88 })
+        );
+        const glow = new THREE.Mesh(
+          new THREE.SphereGeometry(0.48, 24, 24),
+          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending })
+        );
+        group.add(glow, shell);
+
+        const spriteCanvas = document.createElement("canvas");
+        spriteCanvas.width = 320;
+        spriteCanvas.height = 96;
+        const ctx = spriteCanvas.getContext("2d");
+        ctx.fillStyle = "rgba(5,5,6,0.72)";
+        ctx.strokeStyle = "rgba(246,244,238,0.18)";
+        ctx.lineWidth = 2;
+        if (ctx.roundRect) {
+          ctx.roundRect(2, 2, 316, 92, 26);
+        } else {
+          ctx.rect(2, 2, 316, 92);
+        }
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#f6f4ee";
+        ctx.font = "700 30px JetBrains Mono, monospace";
+        ctx.fillText(label, 28, 58);
+        const texture = new THREE.CanvasTexture(spriteCanvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.86 }));
+        sprite.scale.set(1.6, 0.48, 1);
+        sprite.position.set(0.92, 0.08, 0);
+        group.add(sprite);
+
+        root.add(group);
+        return group;
+      });
+
+      const lineMaterial = new THREE.LineBasicMaterial({ color: "#d7ff7a", transparent: true, opacity: 0.16 });
+      const lines = nodes.map((node) => {
+        const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), node.userData.base.clone()]);
+        const line = new THREE.Line(geometry, lineMaterial.clone());
+        root.add(line);
+        return line;
+      });
+
+      const particleGeometry = new THREE.BufferGeometry();
+      const particleCount = 260;
+      const positions = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount; i++) {
+        const angle = i * 0.19;
+        const radius = 1.8 + (i % 40) * 0.044;
+        positions[i * 3] = Math.cos(angle) * radius;
+        positions[i * 3 + 1] = (Math.sin(i * 0.37) * 0.75);
+        positions[i * 3 + 2] = Math.sin(angle) * radius * 0.36;
+      }
+      particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const particles = new THREE.Points(
+        particleGeometry,
+        new THREE.PointsMaterial({ color: "#d7ff7a", size: 0.018, transparent: true, opacity: 0.36, blending: THREE.AdditiveBlending })
+      );
+      root.add(particles);
+
+      const light = new THREE.PointLight("#eaffb6", 18, 22);
+      light.position.set(0, 2.2, 4);
+      scene.add(light);
+      scene.add(new THREE.AmbientLight("#9bbcff", 0.9));
+
+      const pointer = { x: 0, y: 0 };
+      const scroll = { value: 0 };
+
+      function resize() {
+        const rect = host.getBoundingClientRect();
+        const width = Math.max(320, rect.width);
+        const height = Math.max(420, rect.height);
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function updateScrollFactor() {
+        const rect = host.getBoundingClientRect();
+        const middle = window.innerHeight * 0.5;
+        const distance = Math.abs(rect.top + rect.height * 0.5 - middle);
+        scroll.value = 1 - Math.min(1, distance / (window.innerHeight * 0.9));
+      }
+
+      window.addEventListener("resize", resize, { passive: true });
+      window.addEventListener("scroll", updateScrollFactor, { passive: true });
+      window.addEventListener("pointermove", (event) => {
+        pointer.x = (event.clientX / window.innerWidth - 0.5) * 2;
+        pointer.y = (event.clientY / window.innerHeight - 0.5) * 2;
+      }, { passive: true });
+
+      resize();
+      updateScrollFactor();
+
+      function animate(time) {
+        const t = time * 0.001;
+        const spread = 0.72 + scroll.value * 0.42;
+        root.rotation.y += ((pointer.x * 0.16) - root.rotation.y) * 0.025;
+        root.rotation.x += ((-pointer.y * 0.08) - root.rotation.x) * 0.025;
+        core.rotation.y = t * 0.32;
+        core.rotation.x = Math.sin(t * 0.7) * 0.1;
+        halo.scale.setScalar(1 + Math.sin(t * 1.6) * 0.045);
+        particles.rotation.y = t * 0.08;
+
+        rings.forEach((ring, index) => {
+          ring.rotation.z += 0.0026 + index * 0.0008;
+          ring.material.opacity = 0.13 + Math.sin(t + index) * 0.025 + scroll.value * 0.08;
+        });
+
+        nodes.forEach((node, index) => {
+          const base = node.userData.base;
+          node.position.lerp(base.clone().multiplyScalar(spread), 0.08);
+          node.children[0].scale.setScalar(1 + Math.sin(t * 1.8 + index) * 0.08);
+          const line = lines[index];
+          line.geometry.setFromPoints([new THREE.Vector3(), node.position.clone()]);
+          line.material.opacity = 0.1 + scroll.value * 0.18;
+        });
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    }
+  </script>
 
   <script>
     const progress = document.querySelector(".progress");
