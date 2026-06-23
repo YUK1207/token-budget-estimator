@@ -28,6 +28,8 @@ It predicts a token range for the whole task, including prompt text, repository 
 
 The repository includes a static product page at `site/index.html`.
 
+Live demo: https://yuk1207.github.io/token-budget-estimator/
+
 Use it as a local preview, GitHub Pages entry point, or lightweight project showcase. It introduces the skill's forecast, ROI, budget contract, and context diet workflow without requiring a backend.
 
 ## Installation
