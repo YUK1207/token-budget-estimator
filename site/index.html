@@ -194,13 +194,25 @@
 
     .breakout-title {
       position: relative;
-      left: clamp(-86px, -6vw, -28px);
-      width: min(1080px, calc(100vw - 42px));
+      left: clamp(-132px, -9vw, -44px);
+      width: min(1240px, calc(100vw - 32px));
       max-width: none;
     }
 
-    .breakout-title.narrow {
-      width: min(920px, calc(100vw - 42px));
+    .breakout-title.hero-title {
+      left: clamp(-166px, -12vw, -58px);
+      width: min(1320px, calc(100vw - 24px));
+    }
+
+    .breakout-title.stage-right {
+      left: clamp(72px, 9vw, 156px);
+      width: min(980px, calc(100vw - 42px));
+    }
+
+    .breakout-title.api-title {
+      left: 0;
+      width: min(640px, 100%);
+      max-width: 100%;
     }
 
     .hero-copy {
@@ -643,6 +655,9 @@
       transform: translateY(0);
     }
 
+    .feature:nth-child(2) { margin-top: 82px; }
+    .feature:nth-child(3) { margin-top: 34px; }
+
     .feature:hover {
       border-color: rgba(215, 255, 122, 0.42);
     }
@@ -694,8 +709,12 @@
       animation: spin 24s linear infinite;
     }
 
-    .api-copy { position: relative; z-index: 1; }
-    .api-copy h2 { font-size: clamp(44px, 6vw, 90px); }
+    .api-copy {
+      position: relative;
+      z-index: 1;
+      transform: translateY(-28px);
+    }
+    .api-copy h2 { font-size: clamp(42px, 5vw, 78px); }
     .api-copy p {
       color: var(--soft);
       font-size: 19px;
@@ -712,6 +731,7 @@
       padding: 18px;
       background: rgba(5,5,6,0.56);
       backdrop-filter: blur(18px);
+      transform: translateY(42px);
     }
 
     .api-head {
@@ -815,6 +835,16 @@
       .feature {
         min-height: 290px;
       }
+
+      .feature:nth-child(2),
+      .feature:nth-child(3) {
+        margin-top: 0;
+      }
+
+      .api-copy,
+      .api-card {
+        transform: none;
+      }
     }
 
     @media (max-width: 720px) {
@@ -852,7 +882,9 @@
       }
 
       .breakout-title,
-      .breakout-title.narrow {
+      .breakout-title.hero-title,
+      .breakout-title.stage-right,
+      .breakout-title.api-title {
         left: 0;
         width: 100%;
       }
@@ -882,7 +914,7 @@
       <div class="hero-grid">
         <div>
           <div class="kicker">Dynamic launch preview</div>
-          <h1 class="breakout-title">Agent work, budgeted before takeoff.</h1>
+          <h1 class="breakout-title hero-title">Agent work, budgeted before takeoff.</h1>
           <p class="hero-copy">A Codex-native preflight layer that predicts token burn, evaluates ROI, writes a budget contract, and tells the agent where context deserves to go first.</p>
           <div class="hero-actions">
             <a class="cta" href="#forecast">Enter product story</a>
@@ -974,7 +1006,7 @@
     <section class="section wrap" id="engine">
       <div class="section-head">
         <span class="section-label">02 / Product engine</span>
-        <h2 class="breakout-title">Not a token counter. A decision system.</h2>
+        <h2 class="breakout-title stage-right">Not a token counter. A decision system.</h2>
         <p>The useful part is not pretending to be exact. The useful part is turning uncertainty into a safer execution path.</p>
       </div>
       <div class="gallery">
@@ -1000,7 +1032,7 @@
       <div class="api-shell">
         <div class="api-copy">
           <span class="section-label">03 / Reserved commercial surface</span>
-          <h2 class="breakout-title narrow">Paid API, designed as the team layer.</h2>
+          <h2 class="breakout-title api-title">Paid API, designed as the team layer.</h2>
           <p>The plugin keeps a future paid interface for heavier users: shared budget policy, team calibration history, multi-task comparison, and portable budget contracts that can follow work across agents or CI.</p>
           <p>This page only presents the product surface. Operational details belong in documentation when the interface is ready.</p>
         </div>
