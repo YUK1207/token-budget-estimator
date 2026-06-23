@@ -24,6 +24,12 @@ It predicts a token range for the whole task, including prompt text, repository 
 - Record actual usage samples for future calibration.
 - Use as a Codex skill through `$token-budget-estimator`.
 
+## Visual Demo
+
+The repository includes a static product page at `site/index.html`.
+
+Use it as a local preview, GitHub Pages entry point, or lightweight project showcase. It introduces the skill's forecast, ROI, budget contract, and context diet workflow without requiring a backend.
+
 ## Installation
 
 ### Install As A Codex Skill
