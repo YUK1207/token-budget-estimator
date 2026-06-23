@@ -80,6 +80,19 @@ class Estimate:
     budget_status: str | None = None
 
 
+@dataclass
+class PromptOptimization:
+    mode: str
+    original_task: str
+    optimized_prompt: str
+    original_estimate: Estimate
+    optimized_estimate: Estimate
+    auto_split: list[str]
+    scope_guard: list[str]
+    output_caps: list[str]
+    savings_summary: str
+
+
 CODE_EXTENSIONS = {
     ".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".java", ".c", ".cc", ".cpp", ".h",
     ".hpp", ".cs", ".php", ".rb", ".swift", ".kt", ".kts", ".scala", ".sh", ".ps1",
@@ -484,6 +497,236 @@ def compare_tasks(
     return results
 
 
+def optimization_profile(mode: str) -> dict[str, object]:
+    profiles: dict[str, dict[str, object]] = {
+        "cheap": {
+            "label": "cheap",
+            "goal": "Find the smallest safe next step that reduces uncertainty before implementation.",
+            "verification": "Run only the narrowest relevant check, or report the exact check to run if unavailable.",
+            "max_files": "Inspect only the top 3-6 likely relevant files.",
+            "max_commands": "Run at most 1-2 focused commands.",
+            "output_cap": "Keep command output summaries under 80 lines and omit unrelated logs.",
+            "reduction": 0.45,
+        },
+        "balanced": {
+            "label": "balanced",
+            "goal": "Complete the requested task with scoped discovery, focused edits, and focused validation.",
+            "verification": "Run focused validation first, then one broader check if the focused check passes.",
+            "max_files": "Inspect only files connected to the target behavior before broadening scope.",
+            "max_commands": "Run focused commands before broad test or build commands.",
+            "output_cap": "Summarize command output and include only actionable failure excerpts.",
+            "reduction": 0.65,
+        },
+        "thorough": {
+            "label": "thorough",
+            "goal": "Complete the task carefully while still avoiding unrelated repository exploration.",
+            "verification": "Run focused validation plus broader regression checks where available.",
+            "max_files": "Inspect related modules, tests, and configs before implementation.",
+            "max_commands": "Run necessary test/build commands, but cap repeated failures.",
+            "output_cap": "Summarize logs by failure chain and avoid dumping full repeated output.",
+            "reduction": 0.82,
+        },
+    }
+    if mode not in profiles:
+        raise ValueError(f"unknown optimization mode: {mode}")
+    return profiles[mode]
+
+
+def choose_mode(mode: str | None, estimate_result: Estimate) -> str:
+    if mode:
+        return mode
+    if estimate_result.risk in {"high", "extreme"} or estimate_result.budget_status == "over_budget":
+        return "cheap"
+    if estimate_result.risk == "medium":
+        return "balanced"
+    return "thorough"
+
+
+def compact_task_text(task: str) -> str:
+    words = task.replace("\n", " ").split()
+    compacted: list[str] = []
+    previous = None
+    for word in words:
+        lowered = word.lower()
+        if lowered == previous:
+            continue
+        compacted.append(word)
+        previous = lowered
+    return " ".join(compacted).strip()
+
+
+def build_scope_guard(task_type: str, profile: dict[str, object]) -> list[str]:
+    guards = [
+        str(profile["max_files"]),
+        "Do not read unrelated directories or generated/vendor files unless they become necessary.",
+        "Stop and report if the task appears broader than the stated scope.",
+    ]
+    if task_type in {"debugging", "test_repair"}:
+        guards.append("Trace one failure chain before editing.")
+    elif task_type == "git_publish":
+        guards.append("Only inspect and publish the target repository files.")
+    elif task_type in {"feature_development", "frontend_build", "refactor", "large_project_task"}:
+        guards.append("Map existing patterns before adding new abstractions.")
+    return guards
+
+
+def build_output_caps(profile: dict[str, object]) -> list[str]:
+    return [
+        str(profile["output_cap"]),
+        "For test failures, include the failing test name, first relevant stack frame, and concise diagnosis.",
+        "Do not paste full build logs unless the user asks for raw output.",
+    ]
+
+
+def build_auto_split(original: Estimate, mode: str) -> list[str]:
+    if mode == "cheap":
+        if original.task_type in {"debugging", "test_repair"}:
+            return [
+                "Discovery: identify the focused failing command and relevant files without editing.",
+                "Fix: patch one confirmed failure chain.",
+                "Verify: run the focused command and summarize remaining failures.",
+            ]
+        if original.task_type == "git_publish":
+            return [
+                "Inspect publish scope and git status.",
+                "Commit only intended files.",
+                "Create/configure remote and push.",
+            ]
+        return [
+            "Discovery: identify relevant files, commands, and risks.",
+            "Implementation: perform the smallest scoped change.",
+            "Verification: run focused checks and report residual risk.",
+        ]
+    if original.risk in {"high", "extreme"}:
+        return split_plan_for(original.risk, original.task_type)
+    return []
+
+
+def build_optimized_prompt(task: str, original: Estimate, mode: str) -> tuple[str, list[str], list[str], list[str]]:
+    profile = optimization_profile(mode)
+    compacted = compact_task_text(task)
+    scope_guard = build_scope_guard(original.task_type, profile)
+    output_caps = build_output_caps(profile)
+    auto_split = build_auto_split(original, mode)
+
+    lines = [
+        "# Codex Task Contract",
+        "",
+        "## Goal",
+        str(profile["goal"]),
+        "",
+        "## Original Request",
+        compacted,
+        "",
+        "## Budget Mode",
+        mode,
+        "",
+        "## Scope",
+        *[f"- {item}" for item in scope_guard],
+        "",
+        "## Execution Plan",
+    ]
+    if auto_split:
+        lines.extend(f"- {item}" for item in auto_split)
+    else:
+        lines.append("- Execute the request in one focused pass.")
+    lines.extend(
+        [
+            "",
+            "## Output Caps",
+            *[f"- {item}" for item in output_caps],
+            "",
+            "## Validation",
+            f"- {profile['verification']}",
+            "- End with changed files, checks run, and unresolved risks.",
+        ]
+    )
+    return "\n".join(lines), auto_split, scope_guard, output_caps
+
+
+def scaled_estimate(base: Estimate, reduction: float) -> Estimate:
+    low_tokens = round_to_nice(int(base.low_tokens * reduction))
+    high_tokens = round_to_nice(int(base.high_tokens * reduction))
+    midpoint_tokens = round_to_nice(int(base.midpoint_tokens * reduction))
+    scaled = Estimate(
+        task_type=base.task_type,
+        complexity=max(1, int(math.ceil(base.complexity * reduction))),
+        risk=risk_for(high_tokens),
+        confidence=base.confidence,
+        low_tokens=low_tokens,
+        high_tokens=high_tokens,
+        midpoint_tokens=midpoint_tokens,
+        input_low_tokens=round_to_nice(int(base.input_low_tokens * reduction)),
+        input_high_tokens=round_to_nice(int(base.input_high_tokens * reduction)),
+        output_low_tokens=round_to_nice(int(base.output_low_tokens * reduction)),
+        output_high_tokens=round_to_nice(int(base.output_high_tokens * reduction)),
+        calibration_ratio=base.calibration_ratio,
+        repo=base.repo,
+        drivers=base.drivers,
+        recommendation=recommendation_for(risk_for(high_tokens), base.task_type, budget_status_for(high_tokens, base.budget_tokens)),
+        split_plan=split_plan_for(risk_for(high_tokens), base.task_type),
+        context_window=base.context_window,
+        context_fit=context_fit_for(high_tokens, base.context_window),
+        cost=cost_for(
+            round_to_nice(int(base.input_low_tokens * reduction)),
+            round_to_nice(int(base.input_high_tokens * reduction)),
+            round_to_nice(int(base.output_low_tokens * reduction)),
+            round_to_nice(int(base.output_high_tokens * reduction)),
+            None,
+            None,
+            "USD",
+        ),
+        budget_tokens=base.budget_tokens,
+        budget_status=budget_status_for(high_tokens, base.budget_tokens),
+    )
+    if base.cost is not None:
+        scaled.cost = CostEstimate(round(base.cost.low * reduction, 4), round(base.cost.high * reduction, 4), base.cost.currency)
+    return scaled
+
+
+def optimize_task(
+    task: str,
+    cwd: str,
+    context_tokens: int,
+    history_path: Path,
+    budget_tokens: int | None = None,
+    context_window: int | None = None,
+    input_price_per_million: float | None = None,
+    output_price_per_million: float | None = None,
+    currency: str = "USD",
+    mode: str | None = None,
+) -> PromptOptimization:
+    original = estimate(
+        task,
+        cwd,
+        context_tokens,
+        history_path,
+        budget_tokens,
+        context_window,
+        input_price_per_million,
+        output_price_per_million,
+        currency,
+    )
+    chosen_mode = choose_mode(mode, original)
+    optimized_prompt, auto_split, scope_guard, output_caps = build_optimized_prompt(task, original, chosen_mode)
+    reduction = float(optimization_profile(chosen_mode)["reduction"])
+    optimized = scaled_estimate(original, reduction)
+    saved_low = max(0, original.low_tokens - optimized.low_tokens)
+    saved_high = max(0, original.high_tokens - optimized.high_tokens)
+    savings_summary = f"Estimated reduction: {saved_low}-{saved_high} tokens by narrowing scope, capping output, and staging execution."
+    return PromptOptimization(
+        mode=chosen_mode,
+        original_task=task,
+        optimized_prompt=optimized_prompt,
+        original_estimate=original,
+        optimized_estimate=optimized,
+        auto_split=auto_split,
+        scope_guard=scope_guard,
+        output_caps=output_caps,
+        savings_summary=savings_summary,
+    )
+
+
 def render_markdown(result: Estimate) -> str:
     low = f"{result.low_tokens // 1000}k" if result.low_tokens >= 1000 else str(result.low_tokens)
     high = f"{result.high_tokens // 1000}k" if result.high_tokens >= 1000 else str(result.high_tokens)
@@ -521,6 +764,27 @@ def render_compare_markdown(results: list[Estimate]) -> str:
         lines.append(
             f"| {result.rank} | {low}-{high} | {result.risk} | {result.task_type} | {result.recommendation} |"
         )
+    return "\n".join(lines)
+
+
+def render_optimization_markdown(result: PromptOptimization) -> str:
+    original_low = f"{result.original_estimate.low_tokens // 1000}k" if result.original_estimate.low_tokens >= 1000 else str(result.original_estimate.low_tokens)
+    original_high = f"{result.original_estimate.high_tokens // 1000}k" if result.original_estimate.high_tokens >= 1000 else str(result.original_estimate.high_tokens)
+    optimized_low = f"{result.optimized_estimate.low_tokens // 1000}k" if result.optimized_estimate.low_tokens >= 1000 else str(result.optimized_estimate.low_tokens)
+    optimized_high = f"{result.optimized_estimate.high_tokens // 1000}k" if result.optimized_estimate.high_tokens >= 1000 else str(result.optimized_estimate.high_tokens)
+    lines = [
+        "**Budget-Aware Prompt Optimization**",
+        f"- Mode: {result.mode}",
+        f"- Original estimate: {original_low}-{original_high} tokens",
+        f"- Optimized estimate: {optimized_low}-{optimized_high} tokens",
+        f"- Original risk: {result.original_estimate.risk}",
+        f"- Optimized risk: {result.optimized_estimate.risk}",
+        f"- Savings: {result.savings_summary}",
+        "",
+        "## Optimized Prompt",
+        "",
+        result.optimized_prompt,
+    ]
     return "\n".join(lines)
 
 
@@ -590,6 +854,19 @@ def build_parser() -> argparse.ArgumentParser:
     compare_parser.add_argument("--history", type=Path, default=default_history_path())
     compare_parser.add_argument("--json", action="store_true")
 
+    optimize_parser = sub.add_parser("optimize")
+    optimize_parser.add_argument("--task", required=True)
+    optimize_parser.add_argument("--cwd", default=os.getcwd())
+    optimize_parser.add_argument("--mode", choices=["cheap", "balanced", "thorough"], default=None)
+    optimize_parser.add_argument("--context-tokens", type=int, default=None)
+    optimize_parser.add_argument("--budget", type=int, default=None)
+    optimize_parser.add_argument("--context-window", type=int, default=None)
+    optimize_parser.add_argument("--input-price-per-million", type=float, default=None)
+    optimize_parser.add_argument("--output-price-per-million", type=float, default=None)
+    optimize_parser.add_argument("--currency", default=None)
+    optimize_parser.add_argument("--history", type=Path, default=default_history_path())
+    optimize_parser.add_argument("--json", action="store_true")
+
     record_parser = sub.add_parser("record")
     record_parser.add_argument("--task", required=True)
     record_parser.add_argument("--task-type", required=True)
@@ -643,6 +920,26 @@ def main(argv: Iterable[str] | None = None) -> int:
             print(json.dumps([asdict(result) for result in results], ensure_ascii=False, indent=2))
         else:
             print(render_compare_markdown(results))
+        return 0
+
+    if args.command == "optimize":
+        config = load_project_config(args.cwd)
+        result = optimize_task(
+            args.task,
+            args.cwd,
+            int(option_value(args.context_tokens, config.context_tokens, 0)),
+            args.history,
+            option_value(args.budget, config.budget_tokens),
+            option_value(args.context_window, config.context_window),
+            option_value(args.input_price_per_million, config.input_price_per_million),
+            option_value(args.output_price_per_million, config.output_price_per_million),
+            str(option_value(args.currency, config.currency, "USD")),
+            args.mode,
+        )
+        if args.json:
+            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+        else:
+            print(render_optimization_markdown(result))
         return 0
 
     if args.command == "record":

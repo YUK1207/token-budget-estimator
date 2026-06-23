@@ -15,6 +15,10 @@ It predicts a token range for the whole task, including prompt text, repository 
 - Check context-window fit with `--context-window`.
 - Estimate cost from custom input/output token prices.
 - Compare multiple tasks and rank them by estimated token usage.
+- Optimize rough prompts into budget-aware Codex task contracts.
+- Generate cheap, balanced, or thorough execution modes.
+- Add scope guards, output caps, and auto-split plans for expensive tasks.
+- Show before/after token estimates for optimized prompts.
 - Load project defaults from `.token-budget.json`.
 - Record actual usage samples for future calibration.
 - Use as a Codex skill through `$token-budget-estimator`.
@@ -204,6 +208,31 @@ You can also use a task file with one task per line:
 ```powershell
 python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" compare --tasks-file ".\tasks.txt" --cwd "D:\path\to\repo"
 ```
+
+## Optimize A Prompt
+
+Use `optimize` to turn a rough task into a budget-aware Codex task contract:
+
+```powershell
+python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" optimize --task "Refactor the entire project and run all tests" --cwd "D:\path\to\repo" --budget 50000 --mode cheap
+```
+
+Modes:
+
+- `cheap`: discovery-first, strict scope, minimal commands.
+- `balanced`: scoped implementation with focused validation.
+- `thorough`: broader validation while still avoiding unrelated exploration.
+
+The optimizer outputs:
+
+- original estimate
+- optimized estimate
+- budget mode
+- optimized prompt
+- task contract sections: goal, scope, execution plan, output caps, validation
+- automatic split plan when useful
+
+It intentionally does not output a prompt diff by default.
 
 ## Record Actual Usage
 

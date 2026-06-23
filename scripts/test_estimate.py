@@ -69,6 +69,31 @@ class TokenBudgetEstimatorTests(unittest.TestCase):
         self.assertGreaterEqual(results[0].midpoint_tokens, results[1].midpoint_tokens)
         self.assertEqual(results[0].rank, 1)
 
+    def test_optimize_task_generates_budget_aware_contract_without_diff(self):
+        result = estimator.optimize_task(
+            "Refactor the entire project and run all tests",
+            "C:\\does-not-exist",
+            context_tokens=0,
+            history_path=Path("missing-history.jsonl"),
+            budget_tokens=50000,
+            context_window=128000,
+            input_price_per_million=None,
+            output_price_per_million=None,
+            currency="USD",
+            mode="cheap",
+        )
+
+        self.assertEqual(result.mode, "cheap")
+        self.assertLess(result.optimized_estimate.high_tokens, result.original_estimate.high_tokens)
+        self.assertIn("Goal", result.optimized_prompt)
+        self.assertIn("Scope", result.optimized_prompt)
+        self.assertIn("Validation", result.optimized_prompt)
+        self.assertTrue(result.auto_split)
+        self.assertTrue(result.scope_guard)
+        self.assertTrue(result.output_caps)
+        self.assertTrue(result.savings_summary)
+        self.assertFalse(hasattr(result, "prompt_diff"))
+
 
 if __name__ == "__main__":
     unittest.main()

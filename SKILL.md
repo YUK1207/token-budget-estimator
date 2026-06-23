@@ -40,6 +40,14 @@ Optional flags:
 
 Use `--json` when another tool or script will consume the result. Use the default Markdown output for user-facing preflight reports.
 
+Optimize a prompt under a token budget:
+
+```bash
+python <skill-dir>/scripts/estimate.py optimize --task "<rough task>" --budget 50000 --mode cheap
+```
+
+Use `optimize` when the user wants a cheaper, safer Codex-ready task contract. It produces a compressed task, scope guard, output caps, auto-split plan, and before/after estimates. Do not produce a prompt diff unless the user explicitly asks for one.
+
 Compare multiple tasks:
 
 ```bash
@@ -95,4 +103,5 @@ Default behavior:
 - Read `references/token-model.md` when adjusting formulas or explaining the prediction model.
 - Read `references/risk-policy.md` when deciding whether to continue, ask for confirmation, or split.
 - Read `references/project-config.md` when configuring default budgets, context windows, or prices.
+- Read `references/prompt-optimization.md` when optimizing prompts or explaining budget modes.
 - Read `references/agents-preflight.md` when installing a project-level or global preflight rule.
