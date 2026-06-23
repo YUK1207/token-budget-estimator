@@ -1,470 +1,747 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Token Budget Estimator</title>
-  <meta name="description" content="A Codex-native preflight controller for token forecast, ROI, budget contracts, and context diet planning.">
+  <meta name="description" content="A launch-style product page for Token Budget Estimator, a Codex preflight controller for token forecast, ROI, budget contracts, and context diet planning.">
   <style>
     :root {
-      --bg: #f7f8f3;
-      --panel: #ffffff;
-      --ink: #11140f;
-      --muted: #5d6358;
-      --line: #d9decf;
-      --line-strong: #aeb8a0;
-      --accent: #2f7d32;
-      --accent-soft: #e1efdc;
-      --accent-dark: #17471b;
-      --shadow: 0 18px 60px rgba(30, 42, 24, 0.08);
-      --mono: "SFMono-Regular", "Cascadia Code", "Liberation Mono", Consolas, monospace;
-      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      --bg: #0f172a;
+      --bg-2: #111827;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-strong: rgba(2, 6, 23, 0.9);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --line: rgba(148, 163, 184, 0.24);
+      --green: #22c55e;
+      --green-soft: rgba(34, 197, 94, 0.14);
+      --cyan: #38bdf8;
+      --amber: #facc15;
+      --red: #fb7185;
+      --shadow: 0 24px 90px rgba(0, 0, 0, 0.34);
+      --mono: "Space Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     }
+
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      color: var(--ink);
+      color: var(--text);
       background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(247, 248, 243, 0.96)),
-        linear-gradient(90deg, rgba(17, 20, 15, 0.035) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(17, 20, 15, 0.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 1) 72%),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
         var(--bg);
-      background-size: auto, 44px 44px, 44px 44px, auto;
+      background-size: auto, 56px 56px, 56px 56px, auto;
       font-family: var(--sans);
+      overflow-x: hidden;
     }
+
     a { color: inherit; text-decoration: none; }
     button, input, textarea { font: inherit; }
-    .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+
+    .stage {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
     .nav {
-      min-height: 76px;
+      position: fixed;
+      z-index: 20;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(1180px, calc(100% - 40px));
+      min-height: 58px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--line);
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 720;
-      letter-spacing: -0.03em;
-    }
-    .brand-mark {
-      width: 32px;
-      height: 32px;
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--ink);
-      border-radius: 8px;
-      background: var(--ink);
-      color: #fff;
-      font-family: var(--mono);
-      font-size: 13px;
-    }
-    .nav-links { display: flex; align-items: center; gap: 22px; color: var(--muted); font-size: 14px; }
-    .nav-links a { transition: color 160ms ease; }
-    .nav-links a:hover { color: var(--ink); }
-    .hero {
-      min-height: calc(100dvh - 76px);
-      display: grid;
-      grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
-      gap: 54px;
-      align-items: center;
-      padding: 64px 0 72px;
-    }
-    .eyebrow {
-      width: fit-content;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      gap: 20px;
+      padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: 999px;
-      padding: 8px 12px;
-      background: rgba(255, 255, 255, 0.58);
-      color: var(--accent-dark);
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(34, 197, 94, 0.6);
+      background: var(--green-soft);
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .brand-text { display: grid; line-height: 1.05; }
+    .brand-text strong { font-size: 13px; letter-spacing: 0; }
+    .brand-text span { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #cbd5e1;
       font-family: var(--mono);
       font-size: 12px;
     }
+
+    .nav-links a {
+      padding: 9px 12px;
+      border-radius: 999px;
+      transition: background 180ms ease, color 180ms ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible {
+      color: var(--text);
+      background: rgba(148, 163, 184, 0.14);
+      outline: none;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      width: fit-content;
+      border: 1px solid rgba(34, 197, 94, 0.42);
+      border-radius: 999px;
+      padding: 9px 13px;
+      color: #bbf7d0;
+      background: var(--green-soft);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
     .pulse {
       width: 8px;
       height: 8px;
-      border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 0 6px rgba(47, 125, 50, 0.12);
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.13);
     }
+
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      align-items: center;
+      padding: 126px 0 58px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(360px, 0.98fr);
+      gap: 44px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      margin: 22px 0 18px;
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
     h1 {
-      max-width: 790px;
-      margin: 24px 0 0;
-      font-size: clamp(46px, 7vw, 88px);
-      line-height: 0.94;
-      letter-spacing: -0.075em;
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(52px, 8vw, 112px);
+      line-height: 0.86;
+      letter-spacing: 0;
+      text-wrap: balance;
     }
-    .hero-copy {
-      max-width: 640px;
-      margin: 26px 0 0;
-      color: var(--muted);
-      font-size: 18px;
-      line-height: 1.68;
-      text-wrap: pretty;
+
+    .lead {
+      max-width: 680px;
+      margin: 28px 0 0;
+      color: #cbd5e1;
+      font-size: clamp(18px, 2.1vw, 24px);
+      line-height: 1.48;
     }
-    .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 34px; }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
     .button {
-      min-height: 46px;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      border: 1px solid var(--ink);
-      padding: 0 17px;
-      font-weight: 680;
-      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
-      white-space: nowrap;
+      gap: 10px;
+      min-height: 46px;
+      padding: 0 18px;
+      border: 1px solid rgba(34, 197, 94, 0.5);
+      border-radius: 999px;
+      color: #052e16;
+      background: var(--green);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
     }
-    .button:active { transform: translateY(1px); }
-    .button.primary { background: var(--ink); color: #fff; }
-    .button.secondary { background: rgba(255, 255, 255, 0.6); color: var(--ink); border-color: var(--line-strong); }
-    .button.secondary:hover { border-color: var(--ink); background: #fff; }
-    .microgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 42px; max-width: 680px; }
-    .micro { border-top: 1px solid var(--line); padding-top: 14px; }
-    .micro strong { display: block; font-size: 24px; letter-spacing: -0.04em; }
-    .micro span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; line-height: 1.4; }
-    .console {
-      border: 1px solid var(--line-strong);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.82);
+
+    .button:hover,
+    .button:focus-visible {
+      transform: translateY(-1px);
+      background: #4ade80;
+      box-shadow: 0 16px 40px rgba(34, 197, 94, 0.18);
+      outline: none;
+    }
+
+    .button.secondary {
+      color: var(--text);
+      background: rgba(15, 23, 42, 0.72);
+      border-color: var(--line);
+    }
+
+    .button.secondary:hover,
+    .button.secondary:focus-visible {
+      background: rgba(148, 163, 184, 0.14);
+      box-shadow: none;
+    }
+
+    .keynote-card {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--panel-strong);
       box-shadow: var(--shadow);
       overflow: hidden;
     }
-    .console-head {
+
+    .keynote-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(34, 197, 94, 0.2), transparent 42%),
+        linear-gradient(315deg, rgba(56, 189, 248, 0.12), transparent 36%);
+      pointer-events: none;
+    }
+
+    .screen {
+      position: relative;
+      padding: 18px;
+    }
+
+    .screen-top {
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 2px 2px 16px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .lights { display: flex; gap: 7px; }
+    .light { width: 10px; height: 10px; border-radius: 50%; background: #334155; }
+    .light:nth-child(1) { background: var(--red); }
+    .light:nth-child(2) { background: var(--amber); }
+    .light:nth-child(3) { background: var(--green); }
+
+    .forecast-panel {
+      display: grid;
+      gap: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 20px;
+      padding: 18px;
+      background: rgba(15, 23, 42, 0.72);
+    }
+
+    .big-number {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .big-number span { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+    .big-number strong { color: var(--green); font-family: var(--mono); font-size: clamp(36px, 6vw, 58px); line-height: 1; }
+
+    .meter {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(148, 163, 184, 0.16);
+    }
+
+    .meter span {
+      display: block;
+      width: 64%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--cyan));
+    }
+
+    .decision-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .decision {
+      min-height: 112px;
+      padding: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      background: rgba(2, 6, 23, 0.56);
+    }
+
+    .decision b { display: block; margin-bottom: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .decision span { display: block; font-size: 18px; font-weight: 700; }
+    .decision small { display: block; margin-top: 8px; color: #94a3b8; line-height: 1.45; }
+
+    .ticker {
+      position: relative;
+      margin-top: 12px;
+      padding: 14px 0;
+      overflow: hidden;
+      border-top: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
-      padding: 14px 16px;
+      color: rgba(248, 250, 252, 0.72);
+      font-family: var(--mono);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .ticker-track {
+      display: inline-flex;
+      gap: 34px;
+      min-width: max-content;
+      animation: drift 28s linear infinite;
+    }
+
+    .section {
+      padding: 92px 0;
+    }
+
+    .section-head {
+      display: grid;
+      gap: 14px;
+      max-width: 760px;
+      margin-bottom: 34px;
+    }
+
+    .section-kicker {
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(36px, 5vw, 72px);
+      line-height: 0.98;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .release-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      overflow: hidden;
+      background: rgba(2, 6, 23, 0.48);
+    }
+
+    .release-card {
+      min-height: 290px;
+      display: grid;
+      align-content: space-between;
+      gap: 26px;
+      padding: 24px;
+      border-right: 1px solid var(--line);
+    }
+
+    .release-card:last-child { border-right: 0; }
+    .release-card:hover { background: rgba(34, 197, 94, 0.06); }
+    .release-card code { color: var(--green); font-family: var(--mono); font-size: 12px; }
+    .release-card h3 { margin: 0; font-size: 24px; line-height: 1.06; }
+    .release-card p { margin: 0; color: var(--muted); line-height: 1.58; }
+
+    .showcase {
+      display: grid;
+      grid-template-columns: 0.8fr 1.2fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .moment {
+      min-height: 360px;
+      display: grid;
+      align-content: end;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 24px;
+      background:
+        linear-gradient(160deg, rgba(34, 197, 94, 0.18), transparent 44%),
+        rgba(2, 6, 23, 0.62);
+      overflow: hidden;
+    }
+
+    .moment strong {
+      display: block;
+      font-size: clamp(44px, 7vw, 96px);
+      line-height: 0.86;
+    }
+
+    .moment span {
+      margin-top: 18px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .flow {
+      display: grid;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 18px;
+      background: rgba(2, 6, 23, 0.62);
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: 118px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      min-height: 72px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(15, 23, 42, 0.68);
+    }
+
+    .flow-row b { color: var(--green); font-family: var(--mono); font-size: 12px; }
+    .flow-row span { color: #e2e8f0; font-weight: 700; }
+    .flow-row small { color: var(--muted); }
+
+    .api {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+      gap: 28px;
+      align-items: center;
+      border: 1px solid rgba(34, 197, 94, 0.32);
+      border-radius: 34px;
+      padding: 28px;
+      background:
+        linear-gradient(135deg, rgba(34, 197, 94, 0.12), transparent 40%),
+        rgba(2, 6, 23, 0.78);
+      box-shadow: var(--shadow);
+    }
+
+    .api h2 { font-size: clamp(34px, 4.5vw, 64px); }
+    .api p { color: #cbd5e1; line-height: 1.6; font-size: 17px; }
+
+    .api-card {
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 24px;
+      padding: 18px;
+      background: rgba(15, 23, 42, 0.78);
+    }
+
+    .api-card header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
       font-family: var(--mono);
       font-size: 12px;
       color: var(--muted);
     }
-    .traffic { display: flex; gap: 7px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--bg); }
-    .console-body { padding: 18px; }
-    .task-input {
-      min-height: 116px;
-      width: 100%;
-      resize: vertical;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      background: #fbfcf8;
-      color: var(--ink);
-      font-size: 15px;
-      line-height: 1.55;
-      outline: none;
-    }
-    .task-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(47, 125, 50, 0.12); }
-    .control-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-    .field { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 12px; }
-    .field label { display: block; color: var(--muted); font-family: var(--mono); font-size: 11px; margin-bottom: 7px; }
-    .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .segmented button {
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: #fbfcf8;
-      color: var(--muted);
-      padding: 8px 7px;
-      cursor: pointer;
-    }
-    .segmented button.active { background: var(--ink); border-color: var(--ink); color: #fff; }
-    .budget-value { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-    .budget-value strong { font-size: 22px; letter-spacing: -0.04em; }
-    .budget-value span { color: var(--muted); font-family: var(--mono); font-size: 11px; }
-    .range { width: 100%; accent-color: var(--accent); margin-top: 10px; }
-    .run {
-      width: 100%;
-      min-height: 48px;
-      margin-top: 12px;
-      border: 0;
-      border-radius: 8px;
-      background: var(--accent);
-      color: #fff;
-      font-weight: 760;
-      cursor: pointer;
-      transition: transform 160ms ease, filter 160ms ease;
-    }
-    .run:hover { filter: brightness(0.96); }
-    .run:active { transform: translateY(1px); }
-    .results { margin-top: 16px; display: grid; gap: 10px; }
-    .result-line {
+
+    .api-line {
       display: grid;
-      grid-template-columns: 150px 1fr;
-      gap: 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 12px;
-      background: #fbfcf8;
-    }
-    .result-line span { color: var(--muted); font-family: var(--mono); font-size: 12px; }
-    .result-line strong { font-size: 15px; }
-    .token-band {
-      position: relative;
-      height: 9px;
-      overflow: hidden;
-      border-radius: 999px;
-      background: #e7eadf;
-    }
-    .token-band::before {
-      content: "";
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: var(--band-width, 62%);
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--accent), #8bc34a);
-      transition: width 240ms ease;
-    }
-    section { padding: 86px 0; border-top: 1px solid var(--line); }
-    .section-head { max-width: 760px; margin-bottom: 36px; }
-    .section-head h2 { margin: 0; font-size: clamp(34px, 4vw, 58px); line-height: 1; letter-spacing: -0.065em; }
-    .section-head p { margin: 18px 0 0; color: var(--muted); font-size: 17px; line-height: 1.65; }
-    .module-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
-    .module { min-height: 250px; padding: 22px; border-right: 1px solid var(--line); }
-    .module:last-child { border-right: 0; }
-    .module .index { font-family: var(--mono); color: var(--accent); font-size: 12px; }
-    .module h3 { margin: 44px 0 12px; font-size: 23px; letter-spacing: -0.04em; }
-    .module p { margin: 0; color: var(--muted); line-height: 1.55; font-size: 15px; }
-    .split { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 40px; align-items: start; }
-    .contract { border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); overflow: hidden; }
-    .contract-row { display: grid; grid-template-columns: 180px 1fr; gap: 18px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
-    .contract-row:last-child { border-bottom: 0; }
-    .contract-row span { color: var(--muted); font-family: var(--mono); font-size: 12px; }
-    .contract-row strong { display: block; font-size: 17px; letter-spacing: -0.02em; }
-    .diet { display: grid; gap: 12px; }
-    .diet-row {
-      display: grid;
-      grid-template-columns: 120px 1fr;
+      grid-template-columns: 130px 1fr;
       gap: 14px;
-      align-items: stretch;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      padding: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      font-family: var(--mono);
+      font-size: 13px;
     }
-    .diet-row .tag { display: grid; place-items: center; border-radius: 7px; background: var(--accent-soft); color: var(--accent-dark); font-family: var(--mono); font-size: 12px; }
-    .diet-row p { margin: 0; color: var(--muted); line-height: 1.5; }
-    .commands { display: grid; gap: 14px; border: 1px solid var(--line-strong); border-radius: 8px; background: #11140f; color: #eef2e6; padding: 20px; box-shadow: var(--shadow); }
-    .command { display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: start; border-bottom: 1px solid rgba(255, 255, 255, 0.12); padding-bottom: 14px; }
-    .command:last-child { border-bottom: 0; padding-bottom: 0; }
-    .command span { color: #9bb18f; font-family: var(--mono); font-size: 12px; }
-    code { font-family: var(--mono); font-size: 13px; line-height: 1.55; color: #eef2e6; word-break: break-word; }
-    .install { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: stretch; }
-    .install-panel { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 22px; }
-    .install-panel h3 { margin: 0 0 12px; letter-spacing: -0.03em; }
-    .install-panel p { margin: 0 0 18px; color: var(--muted); line-height: 1.55; }
-    .footer { padding: 42px 0; color: var(--muted); border-top: 1px solid var(--line); font-size: 14px; }
-    .footer-inner { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-    @media (max-width: 980px) {
-      .hero, .split, .install { grid-template-columns: 1fr; }
-      .hero { min-height: auto; }
-      .module-grid { grid-template-columns: repeat(2, 1fr); }
-      .module:nth-child(2) { border-right: 0; }
-      .module:nth-child(1), .module:nth-child(2) { border-bottom: 1px solid var(--line); }
+
+    .api-line:last-child { border-bottom: 0; }
+    .api-line b { color: var(--green); }
+    .api-line span { color: #e2e8f0; }
+
+    .footer {
+      padding: 54px 0 40px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
     }
-    @media (max-width: 680px) {
-      .shell { width: min(100% - 24px, 1180px); }
-      .nav { align-items: flex-start; flex-direction: column; gap: 16px; padding: 18px 0; }
-      .nav-links { width: 100%; justify-content: space-between; gap: 12px; font-size: 13px; }
-      h1 { font-size: clamp(42px, 15vw, 68px); }
-      .microgrid, .control-row, .module-grid { grid-template-columns: 1fr; }
-      .module { border-right: 0; border-bottom: 1px solid var(--line); }
-      .module:last-child { border-bottom: 0; }
-      .result-line, .contract-row, .diet-row, .command { grid-template-columns: 1fr; }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      border-top: 1px solid var(--line);
+      padding-top: 22px;
     }
+
+    @keyframes drift {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hero-grid,
+      .showcase,
+      .api {
+        grid-template-columns: 1fr;
+      }
+
+      .release-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .release-card:nth-child(2) { border-right: 0; }
+      .release-card:nth-child(1),
+      .release-card:nth-child(2) { border-bottom: 1px solid var(--line); }
+    }
+
+    @media (max-width: 720px) {
+      .stage,
+      .nav { width: min(100% - 28px, 1180px); }
+
+      .nav {
+        align-items: flex-start;
+        border-radius: 24px;
+      }
+
+      .nav-links { display: none; }
+      .hero { padding-top: 116px; }
+      .decision-grid,
+      .release-grid { grid-template-columns: 1fr; }
+      .release-card { border-right: 0; border-bottom: 1px solid var(--line); }
+      .release-card:last-child { border-bottom: 0; }
+      .flow-row { grid-template-columns: 1fr; }
+      .api { padding: 20px; }
+      .footer-inner { flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <header class="shell nav">
-    <a class="brand" href="#top" aria-label="Token Budget Estimator home">
+  <nav class="nav" aria-label="Primary">
+    <a class="brand" href="#top">
       <span class="brand-mark">TB</span>
-      <span>Token Budget Estimator</span>
+      <span class="brand-text">
+        <strong>Token Budget Estimator</strong>
+        <span>Codex preflight controller</span>
+      </span>
     </a>
-    <nav class="nav-links" aria-label="Main navigation">
+    <div class="nav-links">
       <a href="#modules">Modules</a>
-      <a href="#contract">Contract</a>
-      <a href="#commands">Commands</a>
-      <a href="#install">Install</a>
-    </nav>
-  </header>
+      <a href="#demo">Demo</a>
+      <a href="#api">Paid API</a>
+    </div>
+  </nav>
+
   <main id="top">
-    <section class="shell hero">
-      <div>
-        <div class="eyebrow"><span class="pulse"></span> Codex Token Preflight Controller</div>
-        <h1>Budget the agent before it burns the context.</h1>
-        <p class="hero-copy">A Codex-native skill that predicts token cost, scores execution ROI, writes a budget contract, and tells Codex what context to read first.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="https://github.com/YUK1207/token-budget-estimator">View GitHub</a>
-          <a class="button secondary" href="#commands">See commands</a>
+    <section class="hero stage">
+      <div class="hero-grid">
+        <div>
+          <div class="pill"><span class="pulse"></span><span>Launch preview 01</span></div>
+          <div class="eyebrow">Before Codex starts, the budget starts.</div>
+          <h1>Control the burn before the agent runs.</h1>
+          <p class="lead">Token Budget Estimator turns a vague coding request into a launch-ready preflight decision: forecast the token range, judge the ROI, write the execution contract, and cut the context diet down to what matters.</p>
+          <div class="hero-actions">
+            <a class="button" href="#demo">Watch the preflight</a>
+            <a class="button secondary" href="#api">Paid API reserved</a>
+          </div>
         </div>
-        <div class="microgrid" aria-label="Project stats">
-          <div class="micro"><strong>5</strong><span>CLI entry points for forecast, compare, optimize, control, record.</span></div>
-          <div class="micro"><strong>4</strong><span>Controller modules: forecast, ROI, contract, context diet.</span></div>
-          <div class="micro"><strong>0</strong><span>Required network calls. The core estimator runs locally.</span></div>
-        </div>
-      </div>
-      <aside class="console" aria-label="Interactive token preflight preview">
-        <div class="console-head">
-          <div class="traffic" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-          <span>estimate.py control</span>
-        </div>
-        <div class="console-body">
-          <textarea class="task-input" id="taskInput">Fix the failing login tests and run focused pytest targets</textarea>
-          <div class="control-row">
-            <div class="field">
-              <label>Budget mode</label>
-              <div class="segmented" role="group" aria-label="Budget mode">
-                <button type="button" data-mode="cheap" class="active">cheap</button>
-                <button type="button" data-mode="balanced">balanced</button>
-                <button type="button" data-mode="thorough">thorough</button>
+
+        <aside class="keynote-card" aria-label="Preflight forecast preview">
+          <div class="screen">
+            <div class="screen-top">
+              <div class="lights"><span class="light"></span><span class="light"></span><span class="light"></span></div>
+              <span>LIVE FORECAST</span>
+            </div>
+            <div class="forecast-panel">
+              <div class="big-number">
+                <div>
+                  <span>Projected task cost</span>
+                  <strong>18k-64k</strong>
+                </div>
+                <span>tokens</span>
+              </div>
+              <div class="meter" aria-hidden="true"><span></span></div>
+              <div class="decision-grid">
+                <div class="decision">
+                  <b>ROI</b>
+                  <span>Execute now</span>
+                  <small>Clear scope, focused files, low retry exposure.</small>
+                </div>
+                <div class="decision">
+                  <b>CONTRACT</b>
+                  <span>14 files</span>
+                  <small>4 commands, capped logs, stop on repeated failure.</small>
+                </div>
+                <div class="decision">
+                  <b>DIET</b>
+                  <span>Tests first</span>
+                  <small>Read target tests, nearby module, config, then expand.</small>
+                </div>
+                <div class="decision">
+                  <b>RISK</b>
+                  <span>Medium</span>
+                  <small>Enough uncertainty to budget, not enough to split yet.</small>
+                </div>
               </div>
             </div>
-            <div class="field">
-              <label>Token ceiling</label>
-              <div class="budget-value"><strong id="budgetValue">50k</strong><span>tokens</span></div>
-              <input class="range" id="budgetRange" type="range" min="15000" max="160000" step="5000" value="50000">
-            </div>
           </div>
-          <button class="run" id="runButton" type="button">Generate preflight</button>
-          <div class="results" aria-live="polite">
-            <div class="result-line"><span>Forecast</span><strong id="forecast">8k-144k tokens</strong></div>
-            <div class="token-band" id="tokenBand" aria-hidden="true"></div>
-            <div class="result-line"><span>ROI decision</span><strong id="roi">discovery_first</strong></div>
-            <div class="result-line"><span>Contract</span><strong id="contract">6 files, 2 commands, 80 log lines</strong></div>
-            <div class="result-line"><span>Context diet</span><strong id="diet">tests, auth module, test config first</strong></div>
+        </aside>
+      </div>
+      <div class="ticker" aria-label="Launch ticker">
+        <div class="ticker-track">
+          <span>Token Forecast</span><span>ROI Assessor</span><span>Budget Contract</span><span>Context Diet</span><span>Paid API Interface</span>
+          <span>Token Forecast</span><span>ROI Assessor</span><span>Budget Contract</span><span>Context Diet</span><span>Paid API Interface</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section stage" id="modules">
+      <div class="section-head">
+        <span class="section-kicker">The release lineup</span>
+        <h2>Four decisions before one expensive run.</h2>
+        <p>The page is intentionally product-first: it explains why the skill matters, not how to install or operate it.</p>
+      </div>
+      <div class="release-grid">
+        <article class="release-card">
+          <code>01 / Forecast</code>
+          <div>
+            <h3>Token Forecast</h3>
+            <p>Predicts a realistic interval for the full agent path, including reading code, running commands, failed tests, logs, retries, and final response.</p>
+          </div>
+        </article>
+        <article class="release-card">
+          <code>02 / ROI</code>
+          <div>
+            <h3>ROI Assessor</h3>
+            <p>Decides whether the task is worth executing now, should begin with discovery, or should be split before it burns through context.</p>
+          </div>
+        </article>
+        <article class="release-card">
+          <code>03 / Contract</code>
+          <div>
+            <h3>Budget Contract</h3>
+            <p>Frames execution boundaries around file reads, command runs, log output, retry policy, and stop conditions before work begins.</p>
+          </div>
+        </article>
+        <article class="release-card">
+          <code>04 / Diet</code>
+          <div>
+            <h3>Context Diet</h3>
+            <p>Points Codex toward the highest-value context first, and names what should be skipped until evidence says it matters.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section stage" id="demo">
+      <div class="section-head">
+        <span class="section-kicker">Product moment</span>
+        <h2>A preflight layer for serious agent work.</h2>
+        <p>The launch narrative is simple: if an agent can spend context, it should be able to justify that spend before execution.</p>
+      </div>
+      <div class="showcase">
+        <div class="moment">
+          <strong>ROI before action.</strong>
+          <span>Agent execution becomes a budgeted decision, not a blind run.</span>
+        </div>
+        <div class="flow">
+          <div class="flow-row">
+            <b>STEP 01</b>
+            <span>Estimate the burn range</span>
+            <small>Low, expected, and high token exposure.</small>
+          </div>
+          <div class="flow-row">
+            <b>STEP 02</b>
+            <span>Classify the risk</span>
+            <small>Task type, repo size, test uncertainty, log blast radius.</small>
+          </div>
+          <div class="flow-row">
+            <b>STEP 03</b>
+            <span>Set execution boundaries</span>
+            <small>Readable files, runnable commands, output caps, stop-loss.</small>
+          </div>
+          <div class="flow-row">
+            <b>STEP 04</b>
+            <span>Choose the highest-value path</span>
+            <small>Start narrow, verify early, expand only when evidence pays.</small>
           </div>
         </div>
-      </aside>
-    </section>
-    <section class="shell" id="modules">
-      <div class="section-head">
-        <h2>Four modules, one preflight decision.</h2>
-        <p>Most agent waste happens before the agent understands the task. This skill turns the first move into a measured decision instead of a blind repo scan.</p>
-      </div>
-      <div class="module-grid">
-        <article class="module"><span class="index">01</span><h3>Token Forecast</h3><p>Predicts a full task range, including file reads, command output, failed tests, retries, analysis, and final response.</p></article>
-        <article class="module"><span class="index">02</span><h3>ROI Assessor</h3><p>Scores whether the task should execute now, split first, start with discovery, or wait for a better scope.</p></article>
-        <article class="module"><span class="index">03</span><h3>Budget Contract</h3><p>Sets hard working boundaries: files, commands, log lines, denied actions, and stop-loss checkpoints.</p></article>
-        <article class="module"><span class="index">04</span><h3>Context Diet</h3><p>Plans what Codex should read first, what comes second, and what should stay out of context until needed.</p></article>
       </div>
     </section>
-    <section class="shell" id="contract">
-      <div class="split">
-        <div class="section-head">
-          <h2>A contract before execution.</h2>
-          <p>The output is not just a number. It is a working agreement that tells Codex how to spend context and when to stop.</p>
+
+    <section class="section stage" id="api">
+      <div class="api">
+        <div>
+          <span class="section-kicker">Reserved interface</span>
+          <h2>Paid API for teams and heavier workflows.</h2>
+          <p>This is the commercial expansion point: a future interface for shared calibration, team policy, historical task data, and budget contracts that can travel across agents or CI systems.</p>
+          <p>It is presented as a product surface only. The operational details stay in documentation when the API is ready.</p>
         </div>
-        <div class="contract">
-          <div class="contract-row"><span>Token forecast</span><strong>8k-144k, extreme risk</strong></div>
-          <div class="contract-row"><span>ROI</span><strong>discovery_first, high value but high cost pressure</strong></div>
-          <div class="contract-row"><span>Budget rules</span><strong>Read 6 files, run 2 commands, summarize logs under 80 lines</strong></div>
-          <div class="contract-row"><span>Stop-loss</span><strong>Stop if the fix crosses more than 3 modules or risk gets worse</strong></div>
-        </div>
-      </div>
-    </section>
-    <section class="shell">
-      <div class="section-head">
-        <h2>Context diet, not context hoarding.</h2>
-        <p>A good first pass does not read everything. It reads the smallest useful set, then escalates only when the evidence says so.</p>
-      </div>
-      <div class="diet">
-        <div class="diet-row"><div class="tag">first</div><p>Failing test file, directly referenced module, test configuration.</p></div>
-        <div class="diet-row"><div class="tag">second</div><p>Caller and callee modules, fixture setup, recent related changes.</p></div>
-        <div class="diet-row"><div class="tag">avoid</div><p>Unrelated UI pages, documentation, build artifacts, vendor and generated folders.</p></div>
-      </div>
-    </section>
-    <section class="shell" id="commands">
-      <div class="section-head">
-        <h2>Use it from Codex or the CLI.</h2>
-        <p>The skill is installable, but the underlying script is just as useful in terminals, automation, and local experiments.</p>
-      </div>
-      <div class="commands">
-        <div class="command"><span>control</span><code>python scripts/estimate.py control --task "Fix failing tests" --cwd . --budget 50000 --mode cheap</code></div>
-        <div class="command"><span>estimate</span><code>python scripts/estimate.py estimate --task "Upload this skill to GitHub" --cwd . --context-window 128000</code></div>
-        <div class="command"><span>compare</span><code>python scripts/estimate.py compare --task "Explain a function" --task "Refactor the project" --cwd .</code></div>
-        <div class="command"><span>optimize</span><code>python scripts/estimate.py optimize --task "Make this broad request safe for Codex" --budget 50000</code></div>
-      </div>
-    </section>
-    <section class="shell" id="install">
-      <div class="section-head">
-        <h2>Install it as a Codex skill.</h2>
-        <p>Clone the repository into your Codex skills directory, then start a new Codex thread so the skill metadata is loaded.</p>
-      </div>
-      <div class="install">
-        <div class="install-panel">
-          <h3>Clone</h3>
-          <p>Use this if you have access to the GitHub repository.</p>
-          <div class="commands"><div class="command"><span>install</span><code>git clone https://github.com/YUK1207/token-budget-estimator.git ~/.codex/skills/token-budget-estimator</code></div></div>
-        </div>
-        <div class="install-panel">
-          <h3>Invoke</h3>
-          <p>Call it explicitly from Codex when a task looks expensive or risky.</p>
-          <div class="commands"><div class="command"><span>codex</span><code>$token-budget-estimator run a preflight controller report for this task: fix failing tests</code></div></div>
+        <div class="api-card" aria-label="Paid API interface concept">
+          <header>
+            <span>PAID API INTERFACE</span>
+            <span>RESERVED</span>
+          </header>
+          <div class="api-line"><b>Forecast</b><span>Batch token range prediction for planned agent work.</span></div>
+          <div class="api-line"><b>Policy</b><span>Organization budgets, stop rules, and execution tiers.</span></div>
+          <div class="api-line"><b>Calibration</b><span>Historical actual usage feeds future estimates.</span></div>
+          <div class="api-line"><b>Contract</b><span>Portable budget boundary for Codex and other agents.</span></div>
         </div>
       </div>
     </section>
   </main>
-  <footer class="shell footer">
+
+  <footer class="stage footer">
     <div class="footer-inner">
       <span>Token Budget Estimator</span>
       <span>Forecast cost. Assess ROI. Contract the execution. Diet the context.</span>
     </div>
   </footer>
-  <script>
-    const modeButtons = Array.from(document.querySelectorAll("[data-mode]"));
-    const budgetRange = document.querySelector("#budgetRange");
-    const budgetValue = document.querySelector("#budgetValue");
-    const runButton = document.querySelector("#runButton");
-    const taskInput = document.querySelector("#taskInput");
-    const forecast = document.querySelector("#forecast");
-    const roi = document.querySelector("#roi");
-    const contract = document.querySelector("#contract");
-    const diet = document.querySelector("#diet");
-    const tokenBand = document.querySelector("#tokenBand");
-    let activeMode = "cheap";
-    function formatK(value) { return `${Math.round(value / 1000)}k`; }
-    function updateBudget() { budgetValue.textContent = formatK(Number(budgetRange.value)); }
-    function estimatePreview() {
-      const budget = Number(budgetRange.value);
-      const words = taskInput.value.trim().split(/\s+/).filter(Boolean).length;
-      const modeFactor = activeMode === "cheap" ? 0.58 : activeMode === "balanced" ? 0.82 : 1.08;
-      const broadSignal = /entire|all|full|refactor|project|whole|repo|repository/i.test(taskInput.value);
-      const testSignal = /test|pytest|ci|failing|failure|broken|regression/i.test(taskInput.value);
-      const baseHigh = (testSignal ? 116000 : 52000) + words * 1500 + (broadSignal ? 180000 : 0);
-      const high = Math.round(baseHigh * modeFactor);
-      const low = Math.max(3000, Math.round(high * 0.06));
-      const overBudget = high > budget;
-      const severe = high > 120000;
-      const width = Math.min(100, Math.max(18, (high / 180000) * 100));
-      forecast.textContent = `${formatK(low)}-${formatK(high)} tokens`;
-      roi.textContent = severe ? "discovery_first" : overBudget ? "split_first" : "execute_now";
-      contract.textContent = activeMode === "cheap" ? "6 files, 2 commands, 80 log lines" : activeMode === "balanced" ? "14 files, 4 commands, 160 log lines" : "30 files, 10 commands, 320 log lines";
-      diet.textContent = tests ? "tests, target module, config first" : broad ? "repo map, module boundaries, risky call sites first" : "request, nearest files, examples first";
-      tokenBand.style.setProperty("--band-width", `${width}%`);
-      tokenBand.style.background = overBudget ? "#f0e4cf" : "#e7eadf";
-    }
-    modeButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        activeMode = button.dataset.mode;
-        modeButtons.forEach((item) => item.classList.toggle("active", item === button));
-        estimatePreview();
-      });
-    });
-    budgetRange.addEventListener("input", () => { updateBudget(); estimatePreview(); });
-    taskInput.addEventListener("input", estimatePreview);
-    runButton.addEventListener("click", estimatePreview);
-    updateBudget();
-    estimatePreview();
-  </script>
 </body>
 </html>
