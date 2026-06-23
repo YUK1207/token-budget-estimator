@@ -19,6 +19,7 @@ It predicts a token range for the whole task, including prompt text, repository 
 - Generate cheap, balanced, or thorough execution modes.
 - Add scope guards, output caps, and auto-split plans for expensive tasks.
 - Show before/after token estimates for optimized prompts.
+- Generate a full preflight controller report with forecast, ROI, budget contract, and context diet plan.
 - Load project defaults from `.token-budget.json`.
 - Record actual usage samples for future calibration.
 - Use as a Codex skill through `$token-budget-estimator`.
@@ -233,6 +234,24 @@ The optimizer outputs:
 - automatic split plan when useful
 
 It intentionally does not output a prompt diff by default.
+
+## Generate A Preflight Controller Report
+
+Use `control` when you want the strongest pre-execution guidance:
+
+```powershell
+python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" control --task "Fix the failing login tests and run focused pytest targets" --cwd "D:\path\to\repo" --budget 50000 --context-window 128000 --mode cheap
+```
+
+The report includes:
+
+- **Token Forecast**: estimated token range, risk, task type, token drivers.
+- **ROI Assessor**: whether to execute now, split first, run discovery first, or defer.
+- **Budget Contract Generator**: max files, max commands, max log lines, denied actions, stop-loss conditions.
+- **Context Diet Planner**: what to read first, what to read second, what to avoid initially.
+- **Recommended First Pass Prompt**: a ready-to-use Codex task that follows the budget contract.
+
+This is the best command when you want Codex to find the lowest-token path with the highest expected value before implementation.
 
 ## Record Actual Usage
 

@@ -93,6 +93,44 @@ class PromptOptimization:
     savings_summary: str
 
 
+@dataclass
+class ROIAssessment:
+    score: int
+    label: str
+    decision: str
+    rationale: list[str]
+    expected_value: str
+    cost_pressure: str
+
+
+@dataclass
+class BudgetContract:
+    mode: str
+    max_files: int
+    max_commands: int
+    max_log_lines: int
+    allowed_actions: list[str]
+    denied_actions: list[str]
+    stop_loss: list[str]
+
+
+@dataclass
+class ContextDietPlan:
+    read_first: list[str]
+    read_second: list[str]
+    avoid_initially: list[str]
+    escalation_rule: str
+
+
+@dataclass
+class PreflightController:
+    forecast: Estimate
+    roi: ROIAssessment
+    contract: BudgetContract
+    diet: ContextDietPlan
+    recommended_first_pass_prompt: str
+
+
 CODE_EXTENSIONS = {
     ".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".java", ".c", ".cc", ".cpp", ".h",
     ".hpp", ".cs", ".php", ".rb", ".swift", ".kt", ".kts", ".scala", ".sh", ".ps1",
@@ -727,6 +765,191 @@ def optimize_task(
     )
 
 
+def assess_roi(forecast: Estimate) -> ROIAssessment:
+    value_by_type = {
+        "simple_question": 35,
+        "code_explanation": 45,
+        "small_code_change": 65,
+        "debugging": 78,
+        "test_repair": 82,
+        "feature_development": 72,
+        "frontend_build": 68,
+        "git_publish": 62,
+        "refactor": 58,
+        "research_or_docs": 55,
+        "large_project_task": 50,
+    }
+    risk_penalty = {"low": 0, "medium": 12, "high": 28, "extreme": 45}[forecast.risk]
+    budget_penalty = {"within_budget": 0, "near_budget": 10, "over_budget": 25, None: 0}[forecast.budget_status]
+    context_penalty = {"fits": 0, "tight": 12, "likely_exceeds": 25, None: 0}[forecast.context_fit]
+    value = value_by_type.get(forecast.task_type, 50)
+    score = max(1, min(100, value - risk_penalty - budget_penalty - context_penalty + min(10, forecast.complexity)))
+
+    rationale = [
+        f"Task value baseline is {value} for {forecast.task_type}.",
+        f"Risk pressure is {forecast.risk}.",
+    ]
+    if forecast.budget_status:
+        rationale.append(f"Budget status is {forecast.budget_status}.")
+    if forecast.context_fit:
+        rationale.append(f"Context fit is {forecast.context_fit}.")
+
+    if score >= 70 and forecast.risk in {"low", "medium"}:
+        decision = "execute_now"
+        label = "high"
+    elif score >= 45 and forecast.risk != "extreme":
+        decision = "split_first" if forecast.budget_status == "over_budget" else "execute_now"
+        label = "medium"
+    elif forecast.task_type in {"debugging", "test_repair", "large_project_task", "refactor"}:
+        decision = "discovery_first"
+        label = "uncertain"
+    else:
+        decision = "defer"
+        label = "low"
+
+    if forecast.high_tokens < 50_000:
+        cost_pressure = "low"
+    elif forecast.high_tokens < 120_000:
+        cost_pressure = "medium"
+    else:
+        cost_pressure = "high"
+
+    expected_value = "high" if value >= 75 else "medium" if value >= 55 else "low"
+    return ROIAssessment(score, label, decision, rationale, expected_value, cost_pressure)
+
+
+def contract_limits(mode: str, forecast: Estimate) -> tuple[int, int, int]:
+    if mode == "cheap":
+        return (6, 2, 80)
+    if mode == "balanced":
+        return (14, 4, 160)
+    if forecast.risk == "extreme":
+        return (24, 8, 240)
+    return (30, 10, 320)
+
+
+def generate_budget_contract(forecast: Estimate, mode: str) -> BudgetContract:
+    max_files, max_commands, max_log_lines = contract_limits(mode, forecast)
+    allowed = [
+        f"Read at most {max_files} relevant files before the first report.",
+        f"Run at most {max_commands} focused commands before reassessing.",
+        f"Summarize command output under {max_log_lines} lines.",
+        "Prefer discovery before implementation when scope is uncertain.",
+    ]
+    denied = [
+        "Do not scan the entire repository as the first step.",
+        "Do not run a full test suite before identifying a focused target.",
+        "Do not paste full logs or generated files into the response.",
+        "Do not refactor unrelated code while pursuing the task.",
+    ]
+    stop_loss = [
+        f"Stop if more than {max_files} files are needed before a plausible path is found.",
+        f"Stop if {max_commands} commands do not reproduce or narrow the issue.",
+        "Stop if the likely fix crosses more than 3 modules.",
+        "Stop if the token estimate moves to a higher risk tier.",
+    ]
+    if forecast.task_type == "git_publish":
+        denied[1] = "Do not publish files outside the intended repository."
+        stop_loss[2] = "Stop if git status contains unrelated changes."
+    return BudgetContract(mode, max_files, max_commands, max_log_lines, allowed, denied, stop_loss)
+
+
+def plan_context_diet(task: str, forecast: Estimate) -> ContextDietPlan:
+    task_lower = task.lower()
+    if forecast.task_type in {"debugging", "test_repair"}:
+        read_first = ["failing test file", "directly referenced module", "test configuration"]
+        read_second = ["caller/callee modules", "fixture or mock setup", "recent related changes"]
+        avoid = ["unrelated UI pages", "documentation", "build artifacts", "vendor/generated folders"]
+    elif forecast.task_type == "git_publish":
+        read_first = ["README.md", "SKILL.md", "agents/openai.yaml", "git status"]
+        read_second = ["scripts directory", "references directory", "remote configuration"]
+        avoid = ["global Codex config", "other local skills", "private history files"]
+    elif forecast.task_type in {"feature_development", "frontend_build"}:
+        read_first = ["entry point for target feature", "nearest existing component/module", "focused tests or examples"]
+        read_second = ["shared helpers", "style/config files", "validation commands"]
+        avoid = ["unrelated feature areas", "large snapshots", "full dependency trees"]
+    elif forecast.task_type in {"refactor", "large_project_task"}:
+        read_first = ["repo map or architecture summary", "target module boundaries", "highest-risk call sites"]
+        read_second = ["focused tests", "shared interfaces", "migration examples"]
+        avoid = ["full source dumps", "generated files", "unrelated packages"]
+    elif "novel" in task_lower or "report" in task_lower or "文章" in task_lower:
+        read_first = ["user requirements", "target audience", "outline constraints"]
+        read_second = ["style references if supplied", "format requirements"]
+        avoid = ["repository files", "tool logs", "unrelated research"]
+    else:
+        read_first = ["user request", "nearest relevant file or context", "existing examples"]
+        read_second = ["supporting configs", "focused verification target"]
+        avoid = ["unrelated directories", "full logs", "generated outputs"]
+    escalation = "Broaden context only after the first-pass files fail to identify a plausible path."
+    return ContextDietPlan(read_first, read_second, avoid, escalation)
+
+
+def choose_contract_mode(mode: str | None, forecast: Estimate, roi: ROIAssessment) -> str:
+    if mode:
+        return mode
+    if roi.decision in {"discovery_first", "defer"} or forecast.risk in {"high", "extreme"}:
+        return "cheap"
+    if forecast.risk == "medium":
+        return "balanced"
+    return "thorough"
+
+
+def build_first_pass_prompt(task: str, forecast: Estimate, roi: ROIAssessment, contract: BudgetContract, diet: ContextDietPlan) -> str:
+    lines = [
+        "# Recommended First Pass",
+        "",
+        f"Task: {compact_task_text(task)}",
+        f"Decision: {roi.decision}",
+        f"Token budget mode: {contract.mode}",
+        "",
+        "## Do First",
+        *[f"- Read: {item}" for item in diet.read_first],
+        "",
+        "## Budget Rules",
+        *[f"- {item}" for item in contract.allowed_actions],
+        "",
+        "## Stop-Loss",
+        *[f"- {item}" for item in contract.stop_loss],
+        "",
+        "## Report",
+        "- Summarize findings, likely next step, files inspected, commands run, and whether to continue.",
+    ]
+    if roi.decision == "discovery_first":
+        lines.insert(3, "Do not edit files in this pass.")
+    return "\n".join(lines)
+
+
+def build_preflight_controller(
+    task: str,
+    cwd: str,
+    context_tokens: int,
+    history_path: Path,
+    budget_tokens: int | None = None,
+    context_window: int | None = None,
+    input_price_per_million: float | None = None,
+    output_price_per_million: float | None = None,
+    currency: str = "USD",
+    mode: str | None = None,
+) -> PreflightController:
+    forecast = estimate(
+        task,
+        cwd,
+        context_tokens,
+        history_path,
+        budget_tokens,
+        context_window,
+        input_price_per_million,
+        output_price_per_million,
+        currency,
+    )
+    roi = assess_roi(forecast)
+    contract_mode = choose_contract_mode(mode, forecast, roi)
+    contract = generate_budget_contract(forecast, contract_mode)
+    diet = plan_context_diet(task, forecast)
+    first_pass = build_first_pass_prompt(task, forecast, roi, contract, diet)
+    return PreflightController(forecast, roi, contract, diet, first_pass)
+
+
 def render_markdown(result: Estimate) -> str:
     low = f"{result.low_tokens // 1000}k" if result.low_tokens >= 1000 else str(result.low_tokens)
     high = f"{result.high_tokens // 1000}k" if result.high_tokens >= 1000 else str(result.high_tokens)
@@ -784,6 +1007,53 @@ def render_optimization_markdown(result: PromptOptimization) -> str:
         "## Optimized Prompt",
         "",
         result.optimized_prompt,
+    ]
+    return "\n".join(lines)
+
+
+def render_controller_markdown(result: PreflightController) -> str:
+    forecast_low = f"{result.forecast.low_tokens // 1000}k" if result.forecast.low_tokens >= 1000 else str(result.forecast.low_tokens)
+    forecast_high = f"{result.forecast.high_tokens // 1000}k" if result.forecast.high_tokens >= 1000 else str(result.forecast.high_tokens)
+    lines = [
+        "**Codex Token Preflight Controller**",
+        "",
+        "## Token Forecast",
+        f"- Estimate: {forecast_low}-{forecast_high} tokens",
+        f"- Risk: {result.forecast.risk}",
+        f"- Task type: {result.forecast.task_type}",
+        f"- Main drivers: {', '.join(result.forecast.drivers)}",
+        "",
+        "## ROI Assessor",
+        f"- ROI: {result.roi.label} ({result.roi.score}/100)",
+        f"- Decision: {result.roi.decision}",
+        f"- Expected value: {result.roi.expected_value}",
+        f"- Cost pressure: {result.roi.cost_pressure}",
+        *[f"- {item}" for item in result.roi.rationale],
+        "",
+        "## Budget Contract",
+        f"- Mode: {result.contract.mode}",
+        f"- Max files before first report: {result.contract.max_files}",
+        f"- Max commands before reassessment: {result.contract.max_commands}",
+        f"- Max log lines: {result.contract.max_log_lines}",
+        "- Allowed:",
+        *[f"  - {item}" for item in result.contract.allowed_actions],
+        "- Denied:",
+        *[f"  - {item}" for item in result.contract.denied_actions],
+        "- Stop-loss:",
+        *[f"  - {item}" for item in result.contract.stop_loss],
+        "",
+        "## Context Diet Plan",
+        "- Read first:",
+        *[f"  - {item}" for item in result.diet.read_first],
+        "- Read second:",
+        *[f"  - {item}" for item in result.diet.read_second],
+        "- Avoid initially:",
+        *[f"  - {item}" for item in result.diet.avoid_initially],
+        f"- Escalation: {result.diet.escalation_rule}",
+        "",
+        "## Recommended First Pass Prompt",
+        "",
+        result.recommended_first_pass_prompt,
     ]
     return "\n".join(lines)
 
@@ -867,6 +1137,19 @@ def build_parser() -> argparse.ArgumentParser:
     optimize_parser.add_argument("--history", type=Path, default=default_history_path())
     optimize_parser.add_argument("--json", action="store_true")
 
+    control_parser = sub.add_parser("control")
+    control_parser.add_argument("--task", required=True)
+    control_parser.add_argument("--cwd", default=os.getcwd())
+    control_parser.add_argument("--mode", choices=["cheap", "balanced", "thorough"], default=None)
+    control_parser.add_argument("--context-tokens", type=int, default=None)
+    control_parser.add_argument("--budget", type=int, default=None)
+    control_parser.add_argument("--context-window", type=int, default=None)
+    control_parser.add_argument("--input-price-per-million", type=float, default=None)
+    control_parser.add_argument("--output-price-per-million", type=float, default=None)
+    control_parser.add_argument("--currency", default=None)
+    control_parser.add_argument("--history", type=Path, default=default_history_path())
+    control_parser.add_argument("--json", action="store_true")
+
     record_parser = sub.add_parser("record")
     record_parser.add_argument("--task", required=True)
     record_parser.add_argument("--task-type", required=True)
@@ -940,6 +1223,26 @@ def main(argv: Iterable[str] | None = None) -> int:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
         else:
             print(render_optimization_markdown(result))
+        return 0
+
+    if args.command == "control":
+        config = load_project_config(args.cwd)
+        result = build_preflight_controller(
+            args.task,
+            args.cwd,
+            int(option_value(args.context_tokens, config.context_tokens, 0)),
+            args.history,
+            option_value(args.budget, config.budget_tokens),
+            option_value(args.context_window, config.context_window),
+            option_value(args.input_price_per_million, config.input_price_per_million),
+            option_value(args.output_price_per_million, config.output_price_per_million),
+            str(option_value(args.currency, config.currency, "USD")),
+            args.mode,
+        )
+        if args.json:
+            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+        else:
+            print(render_controller_markdown(result))
         return 0
 
     if args.command == "record":

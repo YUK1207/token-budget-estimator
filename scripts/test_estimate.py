@@ -94,6 +94,30 @@ class TokenBudgetEstimatorTests(unittest.TestCase):
         self.assertTrue(result.savings_summary)
         self.assertFalse(hasattr(result, "prompt_diff"))
 
+    def test_preflight_controller_builds_forecast_roi_contract_and_diet(self):
+        result = estimator.build_preflight_controller(
+            "Fix the failing login tests and run focused pytest targets",
+            "C:\\does-not-exist",
+            context_tokens=0,
+            history_path=Path("missing-history.jsonl"),
+            budget_tokens=50000,
+            context_window=128000,
+            input_price_per_million=None,
+            output_price_per_million=None,
+            currency="USD",
+            mode="cheap",
+        )
+
+        self.assertIsNotNone(result.forecast)
+        self.assertIn(result.roi.decision, {"execute_now", "split_first", "discovery_first", "defer"})
+        self.assertGreater(result.roi.score, 0)
+        self.assertGreater(result.contract.max_files, 0)
+        self.assertGreater(result.contract.max_commands, 0)
+        self.assertTrue(result.contract.stop_loss)
+        self.assertTrue(result.diet.read_first)
+        self.assertTrue(result.diet.avoid_initially)
+        self.assertTrue(result.recommended_first_pass_prompt)
+
 
 if __name__ == "__main__":
     unittest.main()
