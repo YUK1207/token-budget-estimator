@@ -192,6 +192,17 @@
       text-wrap: balance;
     }
 
+    .breakout-title {
+      position: relative;
+      left: clamp(-86px, -6vw, -28px);
+      width: min(1080px, calc(100vw - 42px));
+      max-width: none;
+    }
+
+    .breakout-title.narrow {
+      width: min(920px, calc(100vw - 42px));
+    }
+
     .hero-copy {
       max-width: 620px;
       margin: 28px 0 0;
@@ -839,6 +850,12 @@
       .footer-inner {
         flex-direction: column;
       }
+
+      .breakout-title,
+      .breakout-title.narrow {
+        left: 0;
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -865,7 +882,7 @@
       <div class="hero-grid">
         <div>
           <div class="kicker">Dynamic launch preview</div>
-          <h1>Agent work, budgeted before takeoff.</h1>
+          <h1 class="breakout-title">Agent work, budgeted before takeoff.</h1>
           <p class="hero-copy">A Codex-native preflight layer that predicts token burn, evaluates ROI, writes a budget contract, and tells the agent where context deserves to go first.</p>
           <div class="hero-actions">
             <a class="cta" href="#forecast">Enter product story</a>
@@ -896,7 +913,7 @@
     <section class="section wrap" id="forecast">
       <div class="section-head">
         <span class="section-label">01 / Forecast cockpit</span>
-        <h2>One sticky screen. Four product moments.</h2>
+        <h2 class="breakout-title">One sticky screen. Four product moments.</h2>
         <p>Like a device launch page, the product UI stays on stage while the story moves around it. Each scroll step changes the forecast screen and reveals a new part of the preflight decision.</p>
       </div>
 
@@ -957,7 +974,7 @@
     <section class="section wrap" id="engine">
       <div class="section-head">
         <span class="section-label">02 / Product engine</span>
-        <h2>Not a token counter. A decision system.</h2>
+        <h2 class="breakout-title">Not a token counter. A decision system.</h2>
         <p>The useful part is not pretending to be exact. The useful part is turning uncertainty into a safer execution path.</p>
       </div>
       <div class="gallery">
@@ -983,7 +1000,7 @@
       <div class="api-shell">
         <div class="api-copy">
           <span class="section-label">03 / Reserved commercial surface</span>
-          <h2>Paid API, designed as the team layer.</h2>
+          <h2 class="breakout-title narrow">Paid API, designed as the team layer.</h2>
           <p>The plugin keeps a future paid interface for heavier users: shared budget policy, team calibration history, multi-task comparison, and portable budget contracts that can follow work across agents or CI.</p>
           <p>This page only presents the product surface. Operational details belong in documentation when the interface is ready.</p>
         </div>
