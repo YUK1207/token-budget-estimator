@@ -74,21 +74,29 @@
     .nav {
       position: fixed;
       z-index: 30;
-      top: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(1120px, calc(100% - 36px));
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      min-height: 88px;
+      display: flex;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+      background: rgba(5, 5, 6, 0.72);
+      backdrop-filter: blur(24px);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.26);
+    }
+
+    .nav-inner {
+      width: min(1440px, calc(100% - 108px));
       min-height: 58px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 18px;
-      padding: 10px 12px 10px 18px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(5, 5, 6, 0.62);
-      backdrop-filter: blur(24px);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+      padding: 10px 0;
+      margin: 0 auto;
     }
 
     .brand {
@@ -129,7 +137,7 @@
       white-space: nowrap;
     }
 
-    .nav a:not(.brand) {
+    .nav-inner a:not(.brand) {
       display: inline-flex;
       align-items: center;
       min-height: 36px;
@@ -140,8 +148,8 @@
       transition: color 180ms ease, background 180ms ease;
     }
 
-    .nav a:not(.brand):hover,
-    .nav a:not(.brand):focus-visible {
+    .nav-inner a:not(.brand):hover,
+    .nav-inner a:not(.brand):focus-visible {
       color: var(--ink);
       background: rgba(255, 255, 255, 0.08);
       outline: none;
@@ -1084,7 +1092,8 @@
 
     @media (max-width: 720px) {
       .wrap { width: min(100% - 28px, 1180px); }
-      .nav { width: calc(100% - 24px); border-radius: 24px; }
+      .nav { min-height: 78px; padding: 10px 0; }
+      .nav-inner { width: calc(100% - 24px); }
       .nav-links { display: none; }
       .brand strong { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
       .hero { padding-top: 116px; }
@@ -1130,18 +1139,20 @@
   <div class="progress" aria-hidden="true"></div>
 
   <nav class="nav" aria-label="Primary">
-    <a class="brand" href="#top">
-      <span class="mark">TB</span>
-      <span>
-        <strong>Token Budget Estimator</strong>
-        <span>preflight for agent work</span>
-      </span>
-    </a>
-    <div class="nav-links">
-      <a href="#showcase">Showcase</a>
-      <a href="#forecast">Forecast</a>
-      <a href="#engine">Engine</a>
-      <a href="#api">Paid API</a>
+    <div class="nav-inner">
+      <a class="brand" href="#top">
+        <span class="mark">TB</span>
+        <span>
+          <strong>Token Budget Estimator</strong>
+          <span>preflight for agent work</span>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a href="#showcase">Showcase</a>
+        <a href="#forecast">Forecast</a>
+        <a href="#engine">Engine</a>
+        <a href="#api">Paid API</a>
+      </div>
     </div>
   </nav>
 
