@@ -6,6 +6,8 @@
   <title>Token Budget Estimator</title>
   <meta name="description" content="A dynamic product showcase for Token Budget Estimator, the Codex preflight controller for token forecasting, ROI, budget contracts, context diet planning, and paid API expansion.">
   <style>
+    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
+
     :root {
       color-scheme: dark;
       --black: #050506;
@@ -22,7 +24,8 @@
       --pink: #ff9ccf;
       --danger: #ff6f86;
       --radius: 28px;
-      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      --sans: "Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      --display: "Space Grotesk", "Manrope", ui-sans-serif, system-ui, sans-serif;
       --mono: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
     }
 
@@ -107,22 +110,37 @@
     }
 
     .mark {
-      width: 36px;
-      height: 36px;
-      display: grid;
-      place-items: center;
-      border: 1px solid rgba(215, 255, 122, 0.58);
-      border-radius: 50%;
+      position: relative;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      display: block;
       color: var(--gold);
-      background: rgba(215, 255, 122, 0.08);
-      font-family: var(--mono);
-      font-size: 12px;
-      font-weight: 700;
+      filter: drop-shadow(0 0 22px rgba(215, 255, 122, 0.18));
+    }
+
+    .mark svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .mark::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      right: 4px;
+      top: 5px;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 0 6px rgba(125, 255, 202, 0.08);
     }
 
     .brand strong {
       display: block;
       color: var(--ink);
+      font-family: var(--display);
       font-size: 13px;
       line-height: 1.1;
       white-space: nowrap;
@@ -137,7 +155,9 @@
       white-space: nowrap;
     }
 
-    .nav-inner a:not(.brand) {
+    .nav-inner a:not(.brand),
+    .search-link,
+    .contact-link {
       display: inline-flex;
       align-items: center;
       min-height: 36px;
@@ -145,17 +165,58 @@
       border-radius: 999px;
       color: var(--soft);
       font-size: 12px;
+      font-weight: 700;
       transition: color 180ms ease, background 180ms ease;
     }
 
     .nav-inner a:not(.brand):hover,
-    .nav-inner a:not(.brand):focus-visible {
+    .nav-inner a:not(.brand):focus-visible,
+    .search-link:hover,
+    .search-link:focus-visible,
+    .contact-link:hover,
+    .contact-link:focus-visible {
       color: var(--ink);
       background: rgba(255, 255, 255, 0.08);
       outline: none;
     }
 
     .nav-links { display: flex; gap: 4px; }
+
+    .nav-utility {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-link {
+      gap: 10px;
+      min-width: 214px;
+      justify-content: flex-start;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.045);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-weight: 600;
+    }
+
+    .search-link svg,
+    .contact-link svg {
+      width: 15px;
+      height: 15px;
+      flex: 0 0 auto;
+    }
+
+    .contact-link {
+      gap: 9px;
+      color: #111407;
+      background: var(--ink);
+    }
+
+    .contact-link:hover,
+    .contact-link:focus-visible {
+      color: #111407;
+      background: var(--gold);
+    }
 
     .hero {
       min-height: 100vh;
@@ -194,9 +255,10 @@
     h1 {
       max-width: 820px;
       margin: 0;
+      font-family: var(--display);
       font-size: clamp(56px, 9.4vw, 132px);
       line-height: 0.84;
-      letter-spacing: -0.055em;
+      letter-spacing: -0.04em;
       text-wrap: balance;
     }
 
@@ -281,32 +343,61 @@
       perspective: 1100px;
     }
 
-    .token-orb {
+    .forecast-sculpture {
       position: relative;
       width: min(500px, 78vw);
       aspect-ratio: 1;
+      transform-style: preserve-3d;
+      animation: floatOrb 6s ease-in-out infinite;
+    }
+
+    .forecast-sculpture::before {
+      content: "";
+      position: absolute;
+      inset: 12%;
+      border-radius: 32% 68% 58% 42% / 42% 38% 62% 58%;
+      background:
+        radial-gradient(circle at 40% 36%, rgba(246, 244, 238, 0.94), rgba(215, 255, 122, 0.86) 15%, rgba(125, 255, 202, 0.28) 34%, transparent 66%);
+      filter: blur(1px) drop-shadow(0 0 80px rgba(215, 255, 122, 0.24));
+      transform: rotate(-18deg);
+    }
+
+    .forecast-sculpture::after {
+      content: "";
+      position: absolute;
+      inset: 5% 2% 15% 14%;
+      border: 1px solid rgba(246, 244, 238, 0.2);
+      border-radius: 26% 74% 52% 48% / 45% 36% 64% 55%;
+      transform: rotateX(62deg) rotateZ(-18deg);
+    }
+
+    .token-orb {
+      position: absolute;
+      inset: 16%;
       display: grid;
       place-items: center;
-      border-radius: 50%;
+      border-radius: 34% 66% 58% 42% / 44% 38% 62% 56%;
       background:
-        radial-gradient(circle at 48% 42%, rgba(246, 244, 238, 0.98), rgba(215, 255, 122, 0.88) 16%, rgba(125, 255, 202, 0.4) 33%, rgba(255, 255, 255, 0.08) 50%, transparent 72%);
-      filter: drop-shadow(0 0 90px rgba(215, 255, 122, 0.28));
-      animation: floatOrb 6s ease-in-out infinite;
+        linear-gradient(135deg, rgba(246,244,238,0.18), transparent 46%),
+        rgba(5, 5, 6, 0.24);
+      box-shadow: inset 0 0 80px rgba(255,255,255,0.07);
+      transform: rotate(-18deg);
     }
 
     .token-orb::before,
     .token-orb::after {
       content: "";
       position: absolute;
-      inset: 8%;
+      inset: 8% 16%;
       border: 1px solid rgba(246, 244, 238, 0.18);
-      border-radius: 50%;
+      border-radius: 999px;
+      transform: rotate(18deg);
     }
 
     .token-orb::after {
-      inset: 22%;
+      inset: 24% 10%;
       border-color: rgba(5, 5, 6, 0.24);
-      transform: rotateX(68deg);
+      transform: rotateX(68deg) rotateZ(18deg);
     }
 
     .orb-core {
@@ -317,12 +408,13 @@
       display: grid;
       place-items: center;
       border: 1px solid rgba(5, 5, 6, 0.22);
-      border-radius: 50%;
+      border-radius: 34% 66% 58% 42% / 48% 42% 58% 52%;
       color: #111407;
       background: rgba(246, 244, 238, 0.72);
       backdrop-filter: blur(18px);
       text-align: center;
       box-shadow: inset 0 0 50px rgba(255, 255, 255, 0.38);
+      transform: rotate(18deg);
     }
 
     .orb-core strong {
@@ -419,9 +511,10 @@
     .cinema-copy h2 {
       margin: 0;
       max-width: 1040px;
+      font-family: var(--display);
       font-size: clamp(54px, 8.4vw, 128px);
       line-height: 0.82;
-      letter-spacing: -0.062em;
+      letter-spacing: -0.045em;
       text-wrap: balance;
     }
 
@@ -542,22 +635,31 @@
       top: clamp(34px, 5vw, 82px);
       width: min(460px, 42vw);
       aspect-ratio: 1;
-      border: 1px solid rgba(215,255,122,0.24);
-      border-radius: 50%;
-      animation: spin 26s linear infinite;
+      border: 1px solid rgba(215,255,122,0.2);
+      border-radius: 32px;
+      transform: rotate(12deg);
+      animation: contractDrift 9s ease-in-out infinite;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 58px 58px;
+      mask-image: linear-gradient(135deg, black, transparent 76%);
     }
 
     .signal-arc::before,
     .signal-arc::after {
       content: "";
       position: absolute;
-      inset: 14%;
       border: 1px solid rgba(125,255,202,0.18);
-      border-radius: 50%;
+      border-radius: 18px;
+    }
+
+    .signal-arc::before {
+      inset: 16% 24% 42% 8%;
     }
 
     .signal-arc::after {
-      inset: 31%;
+      inset: 48% 8% 18% 34%;
       border-color: rgba(255,255,255,0.14);
     }
 
@@ -571,6 +673,49 @@
       background: rgba(5,5,6,0.58);
       backdrop-filter: blur(18px);
       box-shadow: 0 24px 80px rgba(0,0,0,0.34);
+    }
+
+    .media-chip::before {
+      content: "";
+      display: block;
+      width: 38px;
+      height: 4px;
+      margin-bottom: 18px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--gold), transparent);
+    }
+
+    .media-chip.two {
+      border-radius: 8px 28px 8px 28px;
+      background:
+        linear-gradient(135deg, rgba(155,188,255,0.12), transparent 48%),
+        rgba(5,5,6,0.58);
+    }
+
+    .media-chip.two::before {
+      width: 54px;
+      height: 54px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 16px;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+
+    .media-chip.three {
+      border-radius: 28px;
+      background:
+        conic-gradient(from 210deg, rgba(215,255,122,0.22), transparent 42%, rgba(125,255,202,0.13), transparent 78%),
+        rgba(5,5,6,0.62);
+    }
+
+    .media-chip.three::before {
+      width: 62px;
+      height: 22px;
+      border: 1px solid rgba(215,255,122,0.28);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--mint) 0 54%, rgba(255,255,255,0.12) 54%);
     }
 
     .media-chip b {
@@ -614,9 +759,10 @@
 
     h2 {
       margin: 0;
+      font-family: var(--display);
       font-size: clamp(42px, 7vw, 96px);
       line-height: 0.9;
-      letter-spacing: -0.052em;
+      letter-spacing: -0.04em;
       text-wrap: balance;
     }
 
@@ -670,9 +816,10 @@
 
     .chapter h3 {
       margin: 0;
+      font-family: var(--display);
       font-size: clamp(34px, 5vw, 70px);
       line-height: 0.92;
-      letter-spacing: -0.045em;
+      letter-spacing: -0.035em;
     }
 
     .chapter p {
@@ -748,7 +895,10 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, transparent, rgba(5,5,6,0.46));
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px),
+        linear-gradient(180deg, transparent, rgba(5,5,6,0.46));
+      background-size: 46px 100%, auto;
       pointer-events: none;
     }
 
@@ -801,6 +951,20 @@
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 18px;
       background: rgba(5,5,6,0.38);
+    }
+
+    .mini:nth-child(2) {
+      border-radius: 8px 20px 8px 20px;
+    }
+
+    .mini:nth-child(3) {
+      background:
+        linear-gradient(90deg, rgba(125,255,202,0.08), transparent 64%),
+        rgba(5,5,6,0.38);
+    }
+
+    .mini:nth-child(4) {
+      border-radius: 24px 12px 24px 12px;
     }
 
     .mini small {
@@ -878,9 +1042,10 @@
 
     .feature h3 {
       margin: 0;
+      font-family: var(--display);
       font-size: 34px;
       line-height: 0.98;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.03em;
     }
 
     .feature p {
@@ -973,6 +1138,93 @@
 
     .api-row span { color: var(--soft); line-height: 1.45; }
 
+    .launch-support {
+      min-height: 70vh;
+      display: grid;
+      align-items: center;
+      padding: 80px 0 110px;
+    }
+
+    .support-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: clamp(28px, 5vw, 72px);
+      align-items: end;
+      border-top: 1px solid var(--line);
+      padding-top: clamp(42px, 7vw, 86px);
+    }
+
+    .support-copy h2 { max-width: 760px; }
+
+    .support-copy p {
+      max-width: 620px;
+      margin: 24px 0 0;
+      color: var(--soft);
+      font-size: 19px;
+      line-height: 1.62;
+    }
+
+    .support-actions {
+      display: grid;
+      gap: 12px;
+    }
+
+    .support-action {
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      gap: 16px;
+      align-items: center;
+      min-height: 78px;
+      padding: 14px 18px;
+      border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 22px;
+      background: rgba(255,255,255,0.045);
+      transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+    }
+
+    .support-action:hover,
+    .support-action:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(215,255,122,0.38);
+      background: rgba(255,255,255,0.075);
+      outline: none;
+    }
+
+    .support-action i {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(215,255,122,0.28);
+      border-radius: 14px;
+      color: var(--gold);
+      font-style: normal;
+      font-family: var(--mono);
+      font-size: 12px;
+      background: rgba(215,255,122,0.08);
+    }
+
+    .support-action strong {
+      display: block;
+      font-family: var(--display);
+      font-size: 19px;
+      line-height: 1.1;
+    }
+
+    .support-action span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .support-action em {
+      color: var(--gold);
+      font-style: normal;
+      font-family: var(--mono);
+      font-size: 18px;
+    }
+
     .progress {
       position: fixed;
       z-index: 40;
@@ -987,8 +1239,106 @@
     .footer {
       padding: 70px 0 44px;
       color: var(--muted);
+      background: rgba(255,255,255,0.025);
+      border-top: 1px solid var(--line);
+    }
+
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      padding-bottom: 26px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .footer-top strong {
+      display: block;
+      color: var(--ink);
+      font-family: var(--display);
+      font-size: 26px;
+      letter-spacing: -0.02em;
+    }
+
+    .footer-top span {
+      display: block;
+      max-width: 520px;
+      margin-top: 8px;
+      color: var(--soft);
+      line-height: 1.55;
+    }
+
+    .footer-search {
+      min-width: min(360px, 100%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      align-self: center;
+      padding: 15px 18px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      background: rgba(5,5,6,0.42);
+      color: var(--soft);
       font-family: var(--mono);
       font-size: 12px;
+    }
+
+    .footer-search svg {
+      width: 15px;
+      height: 15px;
+      color: var(--gold);
+    }
+
+    .footer-map {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: clamp(20px, 4vw, 54px);
+      padding: 34px 0 42px;
+    }
+
+    .footer-col h3 {
+      margin: 0 0 16px;
+      color: var(--ink);
+      font-family: var(--display);
+      font-size: 14px;
+    }
+
+    .footer-col a,
+    .footer-col span {
+      display: block;
+      width: fit-content;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      transition: color 180ms ease;
+    }
+
+    .footer-col a:hover,
+    .footer-col a:focus-visible {
+      color: var(--ink);
+      outline: none;
+    }
+
+    .social-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .social-row a {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      margin: 0;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.045);
+    }
+
+    .social-row svg {
+      width: 15px;
+      height: 15px;
     }
 
     .footer-inner {
@@ -997,6 +1347,8 @@
       gap: 18px;
       border-top: 1px solid var(--line);
       padding-top: 22px;
+      font-family: var(--mono);
+      font-size: 12px;
     }
 
     @keyframes floatOrb {
@@ -1006,6 +1358,11 @@
 
     @keyframes spin {
       to { transform: rotate(360deg); }
+    }
+
+    @keyframes contractDrift {
+      0%, 100% { transform: rotate(12deg) translate3d(0, 0, 0); }
+      50% { transform: rotate(8deg) translate3d(-18px, 12px, 0); }
     }
 
     @keyframes launchRise {
@@ -1037,7 +1394,8 @@
     @media (max-width: 1020px) {
       .hero-grid,
       .sticky-show,
-      .api-shell {
+      .api-shell,
+      .support-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1088,6 +1446,22 @@
         width: 100%;
         margin: 12px auto 0;
       }
+
+      .nav-inner {
+        width: min(100% - 36px, 1440px);
+      }
+
+      .search-link {
+        min-width: 174px;
+      }
+
+      .footer-top {
+        flex-direction: column;
+      }
+
+      .footer-map {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 720px) {
@@ -1095,6 +1469,18 @@
       .nav { min-height: 78px; padding: 10px 0; }
       .nav-inner { width: calc(100% - 24px); }
       .nav-links { display: none; }
+      .nav-utility { gap: 6px; }
+      .search-link,
+      .contact-link {
+        min-width: 42px;
+        width: 42px;
+        justify-content: center;
+        padding: 0;
+      }
+      .search-link span,
+      .contact-link span {
+        display: none;
+      }
       .brand strong { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
       .hero { padding-top: 116px; }
       .orb-stage { min-height: 480px; }
@@ -1121,6 +1507,15 @@
       .screen {
         min-height: auto;
       }
+      .support-action {
+        grid-template-columns: 38px 1fr;
+      }
+      .support-action em {
+        display: none;
+      }
+      .footer-map {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
       .footer-inner {
         flex-direction: column;
       }
@@ -1141,17 +1536,48 @@
   <nav class="nav" aria-label="Primary">
     <div class="nav-inner">
       <a class="brand" href="#top">
-        <span class="mark">TB</span>
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img">
+            <defs>
+              <linearGradient id="markGlow" x1="8" y1="7" x2="42" y2="40" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#f6f4ee"/>
+                <stop offset="0.48" stop-color="#d7ff7a"/>
+                <stop offset="1" stop-color="#7dffca"/>
+              </linearGradient>
+            </defs>
+            <path d="M9 12.5 24 5l15 7.5v17.8L24 43 9 30.3V12.5Z" fill="rgba(215,255,122,0.08)" stroke="url(#markGlow)" stroke-width="1.7"/>
+            <path d="M15 17.2 24 12l9 5.2-9 5.4-9-5.4Z" fill="rgba(246,244,238,0.2)" stroke="rgba(246,244,238,0.34)" stroke-width="1"/>
+            <path d="M15 21.8 24 27l9-5.2v9.1L24 38l-9-7.1v-9.1Z" fill="rgba(125,255,202,0.12)" stroke="rgba(215,255,122,0.46)" stroke-width="1"/>
+            <path d="M24 12v26" stroke="rgba(246,244,238,0.38)" stroke-width="1"/>
+            <path d="M17.5 30.5h13" stroke="#d7ff7a" stroke-width="2.1" stroke-linecap="round"/>
+          </svg>
+        </span>
         <span>
           <strong>Token Budget Estimator</strong>
           <span>preflight for agent work</span>
         </span>
       </a>
       <div class="nav-links">
+        <a href="#top">Product</a>
         <a href="#showcase">Showcase</a>
         <a href="#forecast">Forecast</a>
         <a href="#engine">Engine</a>
         <a href="#api">Paid API</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="nav-utility">
+        <a class="search-link" href="#forecast" aria-label="Search product modules">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="m20 20-4.6-4.6M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <span>Search modules</span>
+        </a>
+        <a class="contact-link" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3.5a8.7 8.7 0 0 0-2.75 16.95c.44.08.6-.19.6-.42v-1.5c-2.44.53-2.95-1.04-2.95-1.04-.4-1.02-.98-1.29-.98-1.29-.8-.55.06-.54.06-.54.88.06 1.35.91 1.35.91.79 1.34 2.06.95 2.56.73.08-.57.31-.95.56-1.17-1.95-.22-4-1-4-4.33 0-.96.34-1.74.9-2.35-.09-.22-.39-1.12.09-2.32 0 0 .74-.24 2.4.9a8.2 8.2 0 0 1 4.38 0c1.67-1.14 2.4-.9 2.4-.9.49 1.2.18 2.1.09 2.32.57.61.9 1.39.9 2.35 0 3.34-2.05 4.1-4 4.32.32.28.6.82.6 1.65v2.45c0 .23.16.5.61.42A8.7 8.7 0 0 0 12 3.5Z" fill="currentColor"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
       </div>
     </div>
   </nav>
@@ -1173,11 +1599,13 @@
           <div class="orbit"></div>
           <div class="orbit"></div>
           <div class="orbit"></div>
-          <div class="token-orb">
-            <div class="orb-core">
-              <div>
-                <strong data-count="64">0</strong>
-                <span>k high estimate</span>
+          <div class="forecast-sculpture">
+            <div class="token-orb">
+              <div class="orb-core">
+                <div>
+                  <strong data-count="64">0</strong>
+                  <span>k high estimate</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1315,12 +1743,107 @@
         </div>
       </div>
     </section>
+
+    <section class="launch-support wrap" id="contact">
+      <div class="support-grid">
+        <div class="support-copy">
+          <span class="section-label">04 / After the launch</span>
+          <h2>Built for teams that want agent work to feel accountable.</h2>
+          <p>Keep the public page focused on product story, then route serious users toward the repository, API discussion, roadmap, and calibration ideas.</p>
+        </div>
+        <div class="support-actions" aria-label="Project contact and resource links">
+          <a class="support-action" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">
+            <i>GH</i>
+            <span><strong>GitHub repository</strong><span>Source, README, releases, and project updates.</span></span>
+            <em>+</em>
+          </a>
+          <a class="support-action" href="#api">
+            <i>API</i>
+            <span><strong>Paid interface</strong><span>Reserved surface for team usage and budget policy.</span></span>
+            <em>+</em>
+          </a>
+          <a class="support-action" href="#forecast">
+            <i>ROI</i>
+            <span><strong>Forecast experience</strong><span>Token interval, risk, contract, and context diet preview.</span></span>
+            <em>+</em>
+          </a>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <footer class="wrap footer">
-    <div class="footer-inner">
-      <span>Token Budget Estimator</span>
-      <span>Forecast. Assess ROI. Contract. Diet context.</span>
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-top">
+        <div>
+          <strong>Token Budget Estimator</strong>
+          <span>A preflight product surface for forecasting agent execution before tokens are already spent.</span>
+        </div>
+        <a class="footer-search" href="#forecast">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="m20 20-4.6-4.6M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          Search forecast modules
+        </a>
+      </div>
+      <div class="footer-map">
+        <div class="footer-col">
+          <h3>Product</h3>
+          <a href="#showcase">Launch image</a>
+          <a href="#forecast">Forecast cockpit</a>
+          <a href="#engine">Decision engine</a>
+          <a href="#api">Paid API</a>
+        </div>
+        <div class="footer-col">
+          <h3>Modules</h3>
+          <a href="#forecast">Token Forecast</a>
+          <a href="#forecast">ROI Assessor</a>
+          <a href="#forecast">Budget Contract</a>
+          <a href="#forecast">Context Diet</a>
+        </div>
+        <div class="footer-col">
+          <h3>Team Layer</h3>
+          <a href="#api">Shared policy</a>
+          <a href="#api">Batch estimates</a>
+          <a href="#api">Calibration history</a>
+          <a href="#api">Portable contracts</a>
+        </div>
+        <div class="footer-col">
+          <h3>Project</h3>
+          <a href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://yuk1207.github.io/token-budget-estimator/" target="_blank" rel="noreferrer">Live demo</a>
+          <a href="#contact">Contact</a>
+          <a href="#top">Back to top</a>
+        </div>
+        <div class="footer-col">
+          <h3>Signals</h3>
+          <span>Range-first estimates</span>
+          <span>Risk-aware routing</span>
+          <span>Stop-loss boundaries</span>
+          <span>History calibration</span>
+        </div>
+        <div class="footer-col">
+          <h3>Follow</h3>
+          <span>Open source project</span>
+          <div class="social-row">
+            <a href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer" aria-label="GitHub repository">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3.5a8.7 8.7 0 0 0-2.75 16.95c.44.08.6-.19.6-.42v-1.5c-2.44.53-2.95-1.04-2.95-1.04-.4-1.02-.98-1.29-.98-1.29-.8-.55.06-.54.06-.54.88.06 1.35.91 1.35.91.79 1.34 2.06.95 2.56.73.08-.57.31-.95.56-1.17-1.95-.22-4-1-4-4.33 0-.96.34-1.74.9-2.35-.09-.22-.39-1.12.09-2.32 0 0 .74-.24 2.4.9a8.2 8.2 0 0 1 4.38 0c1.67-1.14 2.4-.9 2.4-.9.49 1.2.18 2.1.09 2.32.57.61.9 1.39.9 2.35 0 3.34-2.05 4.1-4 4.32.32.28.6.82.6 1.65v2.45c0 .23.16.5.61.42A8.7 8.7 0 0 0 12 3.5Z" fill="currentColor"/>
+              </svg>
+            </a>
+            <a href="#contact" aria-label="Contact section">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 7.5h14v9H5v-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="m5.5 8 6.5 5 6.5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-inner">
+        <span>Token Budget Estimator</span>
+        <span>Forecast. Assess ROI. Contract. Diet context.</span>
+      </div>
     </div>
   </footer>
 
