@@ -3,45 +3,60 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Token Budget Estimator</title>
-  <meta name="description" content="A dynamic product showcase for Token Budget Estimator, the Codex preflight controller for token forecasting, ROI, budget contracts, context diet planning, and paid API expansion.">
+  <title>Token Budget Estimator - Launch Redesign</title>
+  <meta name="description" content="A standalone launch-style redesign concept for Token Budget Estimator.">
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
+    @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Playwrite+US+Modern:wght@100..400&display=swap");
 
     :root {
       color-scheme: dark;
-      --black: #050506;
-      --ink: #f6f4ee;
-      --soft: #b9b6ad;
-      --muted: #77746c;
-      --line: rgba(246, 244, 238, 0.14);
-      --line-strong: rgba(246, 244, 238, 0.28);
-      --panel: rgba(18, 18, 18, 0.72);
-      --glass: rgba(255, 255, 255, 0.06);
-      --gold: #d7ff7a;
-      --mint: #7dffca;
-      --blue: #9bbcff;
-      --pink: #ff9ccf;
-      --danger: #ff6f86;
-      --radius: 28px;
-      --sans: "Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-      --display: "Space Grotesk", "Manrope", ui-sans-serif, system-ui, sans-serif;
-      --mono: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --bg: #050606;
+      --bg-2: #090b0a;
+      --ink: #f4f5ef;
+      --muted: #969a92;
+      --soft: #c8cbc2;
+      --line: rgba(244, 245, 239, 0.14);
+      --line-strong: rgba(244, 245, 239, 0.26);
+      --panel: rgba(16, 18, 17, 0.72);
+      --panel-solid: #101211;
+      --accent: #b8ff39;
+      --accent-2: #e3ffb0;
+      --danger: #ff766f;
+      --radius: 18px;
+      --display: "Playwrite US Modern", "Segoe Script", cursive;
+      --block: "Playwrite US Modern", "Segoe Script", cursive;
+      --body: "Playwrite US Modern", "Segoe Script", cursive;
+      --mono: "Playwrite US Modern", "Segoe Script", cursive;
+      --code: "IBM Plex Mono", "Consolas", monospace;
+      --ease: cubic-bezier(.16, 1, .3, 1);
+      --max: 1440px;
     }
 
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: auto;
+      background: var(--bg);
+    }
+
     body {
       margin: 0;
       min-width: 320px;
-      overflow-x: hidden;
       color: var(--ink);
       background:
-        radial-gradient(circle at 50% -12%, rgba(215, 255, 122, 0.2), transparent 34rem),
-        radial-gradient(circle at 88% 18%, rgba(125, 255, 202, 0.12), transparent 28rem),
-        radial-gradient(circle at 18% 74%, rgba(155, 188, 255, 0.12), transparent 30rem),
-        var(--black);
-      font-family: var(--sans);
+        linear-gradient(180deg, rgba(184, 255, 57, 0.045), transparent 30rem),
+        radial-gradient(circle at 82% 14%, rgba(184, 255, 57, 0.12), transparent 23rem),
+        var(--bg);
+      font-family: var(--body);
+      font-weight: 400;
+      overflow-x: hidden;
+    }
+
+    strong,
+    b {
+      font-weight: 400;
     }
 
     body::before {
@@ -51,10 +66,10 @@
       z-index: -2;
       pointer-events: none;
       background:
-        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(255,255,255,0.028) 1px, transparent 1px);
-      background-size: 72px 72px;
-      mask-image: linear-gradient(to bottom, black 0%, transparent 82%);
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px);
+      background-size: 84px 84px;
+      mask-image: linear-gradient(to bottom, black, transparent 74%);
     }
 
     body::after {
@@ -63,234 +78,347 @@
       inset: 0;
       z-index: -1;
       pointer-events: none;
-      background: linear-gradient(180deg, transparent 0%, rgba(5, 5, 6, 0.78) 64%, #050506 100%);
+      background:
+        radial-gradient(circle at 50% 20%, transparent, rgba(5, 6, 6, 0.56) 42rem),
+        linear-gradient(180deg, transparent 0%, #050606 88%);
     }
 
-    a { color: inherit; text-decoration: none; }
-    button { font: inherit; }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font: inherit;
+    }
 
     .wrap {
-      width: min(1180px, calc(100% - 42px));
+      width: min(var(--max), calc(100% - 44px));
       margin: 0 auto;
+    }
+
+    main,
+    footer {
+      position: relative;
+      z-index: 1;
+    }
+
+    .code-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0.44;
+      mask-image: linear-gradient(to bottom, black 0%, black 62%, transparent 100%);
+    }
+
+    .code-backdrop::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 66% 28%, rgba(184, 255, 57, 0.2), transparent 24rem),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.038) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+      background-size: auto, 54px 54px, 54px 54px;
+    }
+
+    .code-backdrop pre,
+    .code-backdrop-loupe pre {
+      margin: 0;
+      color: rgba(244, 245, 239, 0.42);
+      font-family: var(--code);
+      font-size: clamp(11px, 1.12vw, 16px);
+      line-height: 1.85;
+      white-space: pre;
+    }
+
+    .code-backdrop > pre {
+      position: absolute;
+      right: -4vw;
+      top: 10vh;
+      width: min(720px, 56vw);
+      transform: rotate(-4deg);
+      filter: blur(0.35px);
+    }
+
+    .code-backdrop .hot {
+      color: rgba(184, 255, 57, 0.86);
+    }
+
+    .code-backdrop .dim {
+      color: rgba(244, 245, 239, 0.22);
+    }
+
+    .code-backdrop-loupe {
+      position: absolute;
+      right: 8vw;
+      top: 26vh;
+      width: min(320px, 28vw);
+      aspect-ratio: 1;
+      border: 1px solid rgba(244, 245, 239, 0.34);
+      border-radius: 50%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.38), transparent 22%),
+        linear-gradient(135deg, rgba(244, 245, 239, 0.24), rgba(244, 245, 239, 0.052)),
+        rgba(184, 255, 57, 0.045);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.48),
+        inset 0 -18px 46px rgba(5, 6, 6, 0.28),
+        0 28px 90px rgba(0, 0, 0, 0.38),
+        0 0 70px rgba(184, 255, 57, 0.14);
+      will-change: transform;
+      animation: backdropLensDrift 16s var(--ease) infinite alternate;
+    }
+
+    .code-backdrop-loupe::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background:
+        radial-gradient(circle at 25% 18%, rgba(255, 255, 255, 0.55), transparent 22%),
+        linear-gradient(120deg, rgba(255, 255, 255, 0.22), transparent 52%, rgba(184, 255, 57, 0.12));
+      mix-blend-mode: screen;
+    }
+
+    .code-backdrop-loupe pre {
+      position: absolute;
+      left: -260px;
+      top: -92px;
+      width: 720px;
+      color: rgba(244, 245, 239, 0.78);
+      transform: scale(1.42);
+      transform-origin: top left;
+      text-shadow: 0 0 18px rgba(184, 255, 57, 0.14);
+      animation: backdropCodeDrift 16s var(--ease) infinite alternate;
     }
 
     .nav {
       position: fixed;
-      z-index: 30;
       top: 0;
       left: 0;
       right: 0;
-      width: 100%;
-      min-height: 88px;
-      display: flex;
-      align-items: center;
-      padding: 14px 0;
+      z-index: 50;
+      height: 72px;
       border-bottom: 1px solid var(--line);
-      background: rgba(5, 5, 6, 0.72);
-      backdrop-filter: blur(24px);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.26);
+      background: rgba(5, 6, 6, 0.72);
+      backdrop-filter: blur(22px);
     }
 
     .nav-inner {
-      width: min(1440px, calc(100% - 108px));
-      min-height: 58px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 10px 0;
+      width: min(var(--max), calc(100% - 44px));
+      height: 100%;
       margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) auto minmax(160px, 1fr);
+      align-items: center;
+      gap: 18px;
     }
 
     .brand {
       display: inline-flex;
       align-items: center;
       gap: 12px;
-      min-width: 0;
+      width: fit-content;
     }
 
-    .mark {
-      position: relative;
-      width: 42px;
+    .brand-mark {
+      width: auto;
+      min-width: 44px;
       height: 42px;
+      display: inline-grid;
+      place-items: center;
       flex: 0 0 auto;
-      display: block;
-      color: var(--gold);
-      filter: drop-shadow(0 0 22px rgba(215, 255, 122, 0.18));
-    }
-
-    .mark svg {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    .mark::after {
-      content: "";
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      right: 4px;
-      top: 5px;
-      border-radius: 50%;
-      background: var(--mint);
-      box-shadow: 0 0 0 6px rgba(125, 255, 202, 0.08);
-    }
-
-    .brand strong {
-      display: block;
+      border: 0;
+      border-radius: 0;
       color: var(--ink);
+      background: transparent;
       font-family: var(--display);
-      font-size: 13px;
-      line-height: 1.1;
+      font-size: 30px;
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: 0;
+      box-shadow: none;
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: none;
+    }
+
+    .brand-copy strong,
+    .brand-copy span {
+      display: block;
       white-space: nowrap;
     }
 
-    .brand span {
-      display: block;
+    .brand-copy strong {
+      font-family: var(--block);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .brand-copy span {
+      margin-top: 3px;
       color: var(--muted);
       font-family: var(--mono);
       font-size: 11px;
-      line-height: 1.2;
-      white-space: nowrap;
     }
 
-    .nav-inner a:not(.brand),
-    .search-link,
-    .contact-link {
+    .nav-links {
       display: inline-flex;
       align-items: center;
-      min-height: 36px;
-      padding: 0 13px;
-      border-radius: 999px;
-      color: var(--soft);
-      font-size: 12px;
-      font-weight: 700;
-      transition: color 180ms ease, background 180ms ease;
+      justify-content: center;
+      gap: 6px;
     }
 
-    .nav-inner a:not(.brand):hover,
-    .nav-inner a:not(.brand):focus-visible,
-    .search-link:hover,
-    .search-link:focus-visible,
-    .contact-link:hover,
-    .contact-link:focus-visible {
+    .nav-link,
+    .nav-cta {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 180ms var(--ease), color 180ms var(--ease), background 180ms var(--ease), border-color 180ms var(--ease);
+    }
+
+    .nav-link {
+      padding: 0 14px;
+      color: var(--soft);
+      background: transparent;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
       color: var(--ink);
       background: rgba(255, 255, 255, 0.08);
       outline: none;
     }
 
-    .nav-links { display: flex; gap: 4px; }
-
-    .nav-utility {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+    .nav-action {
+      justify-self: end;
     }
 
-    .search-link {
-      gap: 10px;
-      min-width: 214px;
-      justify-content: flex-start;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.045);
-      color: var(--muted);
-      font-family: var(--mono);
-      font-weight: 600;
+    .nav-cta {
+      padding: 0 16px;
+      color: #101407;
+      background: var(--accent);
+      font-size: 12px;
+      font-weight: 400;
     }
 
-    .search-link svg,
-    .contact-link svg {
-      width: 15px;
-      height: 15px;
-      flex: 0 0 auto;
-    }
-
-    .contact-link {
-      gap: 9px;
-      color: #111407;
-      background: var(--ink);
-    }
-
-    .contact-link:hover,
-    .contact-link:focus-visible {
-      color: #111407;
-      background: var(--gold);
+    .nav-cta:hover,
+    .nav-cta:focus-visible {
+      transform: translateY(-1px);
+      background: var(--accent-2);
+      outline: none;
     }
 
     .hero {
-      min-height: 100vh;
+      position: relative;
+      min-height: 100dvh;
       display: grid;
       align-items: center;
-      padding: 124px 0 56px;
+      padding: 112px 0 54px;
+      overflow: hidden;
     }
 
-    .hero-grid {
+    .hero-stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    #engineCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      opacity: 0.98;
+    }
+
+    .hero-shade {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(5, 6, 6, 0.94) 0%, rgba(5, 6, 6, 0.78) 34%, rgba(5, 6, 6, 0.22) 72%, rgba(5, 6, 6, 0.62) 100%),
+        linear-gradient(180deg, rgba(5, 6, 6, 0.32) 0%, rgba(5, 6, 6, 0.05) 45%, #050606 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
       display: grid;
-      grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
-      align-items: center;
-      gap: clamp(32px, 6vw, 84px);
+      grid-template-columns: minmax(0, 0.92fr) minmax(280px, 0.7fr);
+      align-items: end;
+      gap: clamp(26px, 5vw, 84px);
     }
 
-    .kicker {
+    .hero-content > *,
+    .architecture-grid > *,
+    .chapter-device > *,
+    .api-grid > *,
+    .closing-panel > * {
+      min-width: 0;
+    }
+
+    .hero-kicker {
+      width: fit-content;
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 28px;
-      color: var(--gold);
+      gap: 12px;
+      margin-bottom: 26px;
+      color: var(--accent);
       font-family: var(--mono);
       font-size: 12px;
-      letter-spacing: 0.02em;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
     }
 
-    .kicker::before {
+    .hero-kicker::before {
       content: "";
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--gold);
-      box-shadow: 0 0 0 8px rgba(215, 255, 122, 0.12);
+      width: 42px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
     }
 
     h1 {
-      max-width: 820px;
-      margin: 0;
+      max-width: 940px;
       font-family: var(--display);
-      font-size: clamp(56px, 9.4vw, 132px);
-      line-height: 0.84;
-      letter-spacing: -0.04em;
+      font-size: clamp(58px, 10.2vw, 158px);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: 0;
+      text-transform: none;
       text-wrap: balance;
     }
 
-    .breakout-title {
-      position: relative;
-      left: clamp(-132px, -9vw, -44px);
-      width: min(1240px, calc(100vw - 32px));
-      max-width: none;
-    }
-
-    .breakout-title.hero-title {
-      left: clamp(-166px, -12vw, -58px);
-      width: min(1320px, calc(100vw - 24px));
-    }
-
-    .breakout-title.stage-right {
-      left: clamp(72px, 9vw, 156px);
-      width: min(980px, calc(100vw - 42px));
-    }
-
-    .breakout-title.api-title {
-      left: 0;
-      width: min(640px, 100%);
-      max-width: 100%;
-    }
-
     .hero-copy {
-      max-width: 620px;
-      margin: 28px 0 0;
+      max-width: 560px;
+      margin-top: 30px;
       color: var(--soft);
-      font-size: clamp(18px, 2vw, 23px);
-      line-height: 1.55;
+      font-size: clamp(18px, 1.65vw, 23px);
+      line-height: 1.52;
+      text-wrap: pretty;
     }
 
     .hero-actions {
@@ -300,1842 +428,1782 @@
       margin-top: 34px;
     }
 
-    .cta {
+    .button {
+      min-height: 48px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 48px;
-      padding: 0 18px;
-      border: 1px solid rgba(215, 255, 122, 0.58);
+      border: 1px solid transparent;
       border-radius: 999px;
-      color: #111407;
-      background: var(--gold);
-      font-weight: 700;
+      padding: 0 20px;
       cursor: pointer;
-      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+      font-size: 14px;
+      font-weight: 400;
+      transition: transform 180ms var(--ease), background 180ms var(--ease), color 180ms var(--ease), border-color 180ms var(--ease);
     }
 
-    .cta:hover,
-    .cta:focus-visible {
-      transform: translateY(-1px);
-      background: #e3ff9b;
-      box-shadow: 0 20px 56px rgba(215, 255, 122, 0.18);
-      outline: none;
+    .button.primary {
+      color: #101407;
+      background: var(--accent);
+      border-color: rgba(184, 255, 57, 0.74);
     }
 
-    .cta.ghost {
+    .button.secondary {
       color: var(--ink);
-      background: rgba(255, 255, 255, 0.07);
+      background: rgba(255, 255, 255, 0.06);
       border-color: var(--line);
     }
 
-    .cta.ghost:hover,
-    .cta.ghost:focus-visible {
-      background: rgba(255, 255, 255, 0.12);
-      box-shadow: none;
-    }
-
-    .orb-stage {
-      position: relative;
-      min-height: 620px;
-      display: grid;
-      place-items: center;
-      perspective: 1100px;
-    }
-
-    .forecast-sculpture {
-      position: relative;
-      width: min(500px, 78vw);
-      aspect-ratio: 1;
-      transform-style: preserve-3d;
-      animation: floatOrb 6s ease-in-out infinite;
-    }
-
-    .forecast-sculpture::before {
-      content: "";
-      position: absolute;
-      inset: 12%;
-      border-radius: 32% 68% 58% 42% / 42% 38% 62% 58%;
-      background:
-        radial-gradient(circle at 40% 36%, rgba(246, 244, 238, 0.94), rgba(215, 255, 122, 0.86) 15%, rgba(125, 255, 202, 0.28) 34%, transparent 66%);
-      filter: blur(1px) drop-shadow(0 0 80px rgba(215, 255, 122, 0.24));
-      transform: rotate(-18deg);
-    }
-
-    .forecast-sculpture::after {
-      content: "";
-      position: absolute;
-      inset: 5% 2% 15% 14%;
-      border: 1px solid rgba(246, 244, 238, 0.2);
-      border-radius: 26% 74% 52% 48% / 45% 36% 64% 55%;
-      transform: rotateX(62deg) rotateZ(-18deg);
-    }
-
-    .token-orb {
-      position: absolute;
-      inset: 16%;
-      display: grid;
-      place-items: center;
-      border-radius: 34% 66% 58% 42% / 44% 38% 62% 56%;
-      background:
-        linear-gradient(135deg, rgba(246,244,238,0.18), transparent 46%),
-        rgba(5, 5, 6, 0.24);
-      box-shadow: inset 0 0 80px rgba(255,255,255,0.07);
-      transform: rotate(-18deg);
-    }
-
-    .token-orb::before,
-    .token-orb::after {
-      content: "";
-      position: absolute;
-      inset: 8% 16%;
-      border: 1px solid rgba(246, 244, 238, 0.18);
-      border-radius: 999px;
-      transform: rotate(18deg);
-    }
-
-    .token-orb::after {
-      inset: 24% 10%;
-      border-color: rgba(5, 5, 6, 0.24);
-      transform: rotateX(68deg) rotateZ(18deg);
-    }
-
-    .orb-core {
-      position: relative;
-      z-index: 2;
-      width: 48%;
-      aspect-ratio: 1;
-      display: grid;
-      place-items: center;
-      border: 1px solid rgba(5, 5, 6, 0.22);
-      border-radius: 34% 66% 58% 42% / 48% 42% 58% 52%;
-      color: #111407;
-      background: rgba(246, 244, 238, 0.72);
-      backdrop-filter: blur(18px);
-      text-align: center;
-      box-shadow: inset 0 0 50px rgba(255, 255, 255, 0.38);
-      transform: rotate(18deg);
-    }
-
-    .orb-core strong {
-      display: block;
-      font-size: clamp(42px, 6vw, 74px);
-      line-height: 0.9;
-      letter-spacing: -0.06em;
-    }
-
-    .orb-core span {
-      display: block;
-      margin-top: 8px;
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.02em;
-      color: rgba(17, 20, 7, 0.68);
-    }
-
-    .orbit {
-      position: absolute;
-      inset: 5%;
-      border: 1px solid rgba(246, 244, 238, 0.18);
-      border-radius: 50%;
-      transform: rotateX(68deg) rotateZ(var(--r));
-      animation: spin 16s linear infinite;
-    }
-
-    .orbit:nth-child(2) { --r: 38deg; animation-duration: 21s; }
-    .orbit:nth-child(3) { --r: -24deg; animation-duration: 26s; }
-
-    .spec-float {
-      position: absolute;
-      display: grid;
-      gap: 6px;
-      width: 170px;
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: rgba(5, 5, 6, 0.58);
-      backdrop-filter: blur(20px);
-      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.32);
-    }
-
-    .spec-float b {
-      color: var(--ink);
-      font-size: 22px;
-      letter-spacing: -0.03em;
-    }
-
-    .spec-float span {
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-
-    .spec-float.one { top: 9%; left: 0; }
-    .spec-float.two { right: 0; bottom: 18%; }
-    .spec-float.three { left: 8%; bottom: 4%; }
-
-    .scroll-cue {
-      position: absolute;
-      bottom: 2px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-
-    .showcase-section {
-      min-height: 118vh;
-      display: grid;
-      align-items: start;
-      padding: 112px 0 120px;
-      scroll-margin-top: 18px;
-    }
-
-    .cinema-copy {
-      position: relative;
-      z-index: 2;
-      max-width: 900px;
-      margin-bottom: clamp(-124px, -8vw, -72px);
-      opacity: 1;
-      transform: translateY(0);
-      animation: launchRise 780ms ease-out both;
-      transition: opacity 700ms ease, transform 700ms ease;
-    }
-
-    .cinema-copy.revealed {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .cinema-copy h2 {
-      margin: 0;
-      max-width: 1040px;
-      font-family: var(--display);
-      font-size: clamp(54px, 8.4vw, 128px);
-      line-height: 0.82;
-      letter-spacing: -0.045em;
-      text-wrap: balance;
-    }
-
-    .cinema-copy p {
-      max-width: 560px;
-      margin: 24px 0 0 clamp(24px, 12vw, 190px);
-      color: var(--soft);
-      font-size: 20px;
-      line-height: 1.58;
-    }
-
-    .cinema-visual {
-      position: relative;
-      width: min(1380px, calc(100vw - 32px));
-      min-height: clamp(560px, 70vw, 760px);
-      margin-left: 50%;
-      margin-top: 0;
-      transform: translateX(-50%) translateY(0) scale(1);
-      opacity: 1;
-      border: 1px solid rgba(215, 255, 122, 0.22);
-      border-radius: 54px;
-      background:
-        radial-gradient(circle at 22% 24%, rgba(215, 255, 122, 0.22), transparent 23rem),
-        radial-gradient(circle at 82% 18%, rgba(125, 255, 202, 0.16), transparent 26rem),
-        linear-gradient(145deg, rgba(255,255,255,0.11), rgba(255,255,255,0.025));
-      box-shadow: 0 48px 140px rgba(0,0,0,0.55);
-      overflow: hidden;
-      animation: launchScale 920ms cubic-bezier(.2,.8,.2,1) both;
-      transition: opacity 900ms ease, transform 900ms cubic-bezier(.2,.8,.2,1);
-    }
-
-    .cinema-visual.revealed {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0) scale(1);
-    }
-
-    .cinema-visual::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-      background-size: 86px 86px;
-      mask-image: radial-gradient(circle at 58% 44%, black 0%, transparent 72%);
-      pointer-events: none;
-    }
-
-    .cinema-visual::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.16) 45%, transparent 62%);
-      transform: translateX(-120%);
-      animation: sweep 7s ease-in-out infinite;
-      pointer-events: none;
-    }
-
-    .three-stage {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      opacity: 0.92;
-    }
-
-    .mega-screen {
-      position: absolute;
-      z-index: 2;
-      left: clamp(22px, 4vw, 70px);
-      right: clamp(22px, 4vw, 70px);
-      bottom: clamp(26px, 4.2vw, 76px);
-      height: 58%;
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 34px;
-      background:
-        radial-gradient(circle at 78% 24%, rgba(215,255,122,0.18), transparent 22rem),
-        rgba(5,5,6,0.66);
-      backdrop-filter: blur(18px);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 34px 96px rgba(0,0,0,0.42);
-    }
-
-    .mega-readout {
-      position: absolute;
-      left: clamp(32px, 5vw, 88px);
-      top: clamp(28px, 5vw, 86px);
-      z-index: 2;
-    }
-
-    .mega-readout span {
-      display: block;
-      margin-bottom: 12px;
-      color: var(--gold);
-      font-family: var(--mono);
-      font-size: 12px;
-    }
-
-    .mega-readout strong {
-      display: block;
-      font-size: clamp(76px, 13vw, 190px);
-      line-height: 0.78;
-      letter-spacing: -0.075em;
-    }
-
-    .mega-readout small {
-      display: block;
-      width: min(420px, 68vw);
-      margin-top: 28px;
-      color: var(--soft);
-      font-size: 18px;
-      line-height: 1.55;
-    }
-
-    .signal-arc {
-      position: absolute;
-      z-index: 3;
-      right: clamp(26px, 5vw, 92px);
-      top: clamp(34px, 5vw, 82px);
-      width: min(460px, 42vw);
-      aspect-ratio: 1;
-      border: 1px solid rgba(215,255,122,0.2);
-      border-radius: 32px;
-      transform: rotate(12deg);
-      animation: contractDrift 9s ease-in-out infinite;
-      background:
-        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(255,255,255,0.06) 1px, transparent 1px);
-      background-size: 58px 58px;
-      mask-image: linear-gradient(135deg, black, transparent 76%);
-    }
-
-    .signal-arc::before,
-    .signal-arc::after {
-      content: "";
-      position: absolute;
-      border: 1px solid rgba(125,255,202,0.18);
-      border-radius: 18px;
-    }
-
-    .signal-arc::before {
-      inset: 16% 24% 42% 8%;
-    }
-
-    .signal-arc::after {
-      inset: 48% 8% 18% 34%;
-      border-color: rgba(255,255,255,0.14);
-    }
-
-    .media-chip {
-      position: absolute;
-      z-index: 3;
-      width: clamp(168px, 16vw, 240px);
-      padding: 16px;
-      border: 1px solid rgba(255,255,255,0.16);
-      border-radius: 22px;
-      background: rgba(5,5,6,0.58);
-      backdrop-filter: blur(18px);
-      box-shadow: 0 24px 80px rgba(0,0,0,0.34);
-    }
-
-    .media-chip::before {
-      content: "";
-      display: block;
-      width: 38px;
-      height: 4px;
-      margin-bottom: 18px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--gold), transparent);
-    }
-
-    .media-chip.two {
-      border-radius: 8px 28px 8px 28px;
-      background:
-        linear-gradient(135deg, rgba(155,188,255,0.12), transparent 48%),
-        rgba(5,5,6,0.58);
-    }
-
-    .media-chip.two::before {
-      width: 54px;
-      height: 54px;
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 16px;
-      background:
-        linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(255,255,255,0.1) 1px, transparent 1px);
-      background-size: 18px 18px;
-    }
-
-    .media-chip.three {
-      border-radius: 28px;
-      background:
-        conic-gradient(from 210deg, rgba(215,255,122,0.22), transparent 42%, rgba(125,255,202,0.13), transparent 78%),
-        rgba(5,5,6,0.62);
-    }
-
-    .media-chip.three::before {
-      width: 62px;
-      height: 22px;
-      border: 1px solid rgba(215,255,122,0.28);
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--mint) 0 54%, rgba(255,255,255,0.12) 54%);
-    }
-
-    .media-chip b {
-      display: block;
-      font-size: clamp(28px, 4vw, 54px);
-      line-height: 0.9;
-      letter-spacing: -0.055em;
-    }
-
-    .media-chip span {
-      display: block;
-      margin-top: 9px;
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-
-    .media-chip.one { right: 8%; bottom: 16%; }
-    .media-chip.two { right: 29%; top: 11%; }
-    .media-chip.three { left: 11%; bottom: 12%; }
-
-    .section {
-      min-height: 100vh;
-      display: grid;
-      align-items: center;
-      padding: 96px 0;
-    }
-
-    .section-head {
-      max-width: 880px;
-      margin-bottom: 38px;
-    }
-
-    .section-label {
-      display: block;
-      margin-bottom: 18px;
-      color: var(--gold);
-      font-family: var(--mono);
-      font-size: 12px;
-    }
-
-    h2 {
-      margin: 0;
-      font-family: var(--display);
-      font-size: clamp(42px, 7vw, 96px);
-      line-height: 0.9;
-      letter-spacing: -0.04em;
-      text-wrap: balance;
-    }
-
-    .section-head p {
-      max-width: 680px;
-      margin: 24px 0 0;
-      color: var(--soft);
-      font-size: 20px;
-      line-height: 1.58;
-    }
-
-    .sticky-show {
-      position: relative;
-      display: grid;
-      grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1.12fr);
-      gap: 46px;
-      align-items: start;
-    }
-
-    .chapters {
-      display: grid;
-      gap: 18px;
-      padding-bottom: 26vh;
-    }
-
-    .chapter {
-      min-height: 64vh;
-      display: grid;
-      align-content: center;
-      gap: 18px;
-      opacity: 0.36;
-      transform: translateY(28px);
-      transition: opacity 260ms ease, transform 260ms ease;
-    }
-
-    .chapter.active {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .chapter code {
-      width: fit-content;
-      padding: 7px 10px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      color: var(--gold);
-      background: rgba(255,255,255,0.05);
-      font-family: var(--mono);
-      font-size: 12px;
-    }
-
-    .chapter h3 {
-      margin: 0;
-      font-family: var(--display);
-      font-size: clamp(34px, 5vw, 70px);
-      line-height: 0.92;
-      letter-spacing: -0.035em;
-    }
-
-    .chapter p {
-      max-width: 510px;
-      margin: 0;
-      color: var(--soft);
-      font-size: 18px;
-      line-height: 1.58;
-    }
-
-    .device-wrap {
-      position: sticky;
-      top: 118px;
-      min-height: 640px;
-      display: grid;
-      place-items: center;
-    }
-
-    .device {
-      width: min(520px, 100%);
-      min-height: 560px;
-      border: 1px solid var(--line-strong);
-      border-radius: 38px;
-      padding: 18px;
-      background:
-        linear-gradient(145deg, rgba(255,255,255,0.14), transparent 24%),
-        rgba(12, 12, 13, 0.74);
-      backdrop-filter: blur(22px);
-      box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,0.04),
-        0 34px 110px rgba(0,0,0,0.45);
-      overflow: hidden;
-    }
-
-    .device-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 16px;
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-
-    .device-lights { display: flex; gap: 7px; }
-    .device-lights span {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--line-strong);
-    }
-
-    .device-lights span:nth-child(1) { background: var(--danger); }
-    .device-lights span:nth-child(2) { background: var(--gold); }
-    .device-lights span:nth-child(3) { background: var(--mint); }
-
-    .screen {
-      position: relative;
-      min-height: 488px;
-      display: grid;
-      gap: 14px;
-      border: 1px solid rgba(255,255,255,0.11);
-      border-radius: 28px;
-      padding: 20px;
-      background:
-        radial-gradient(circle at 76% 14%, rgba(215, 255, 122, 0.22), transparent 22rem),
-        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025));
-      overflow: hidden;
-    }
-
-    .screen::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px),
-        linear-gradient(180deg, transparent, rgba(5,5,6,0.46));
-      background-size: 46px 100%, auto;
-      pointer-events: none;
-    }
-
-    .screen > * { position: relative; z-index: 1; }
-
-    .forecast-title {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-
-    .big-forecast {
-      margin-top: 6px;
-      font-size: clamp(46px, 7vw, 78px);
-      line-height: 0.9;
-      letter-spacing: -0.07em;
-    }
-
-    .big-forecast span { color: var(--gold); }
-
-    .meter {
-      height: 14px;
-      border-radius: 999px;
-      overflow: hidden;
-      background: rgba(255,255,255,0.1);
-    }
-
-    .meter-bar {
-      width: var(--meter, 54%);
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--mint), var(--gold));
-      transition: width 280ms ease;
-    }
-
-    .mini-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    .mini {
-      min-height: 112px;
-      display: grid;
-      align-content: space-between;
-      padding: 14px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 18px;
-      background: rgba(5,5,6,0.38);
-    }
-
-    .mini:nth-child(2) {
-      border-radius: 8px 20px 8px 20px;
-    }
-
-    .mini:nth-child(3) {
-      background:
-        linear-gradient(90deg, rgba(125,255,202,0.08), transparent 64%),
-        rgba(5,5,6,0.38);
-    }
-
-    .mini:nth-child(4) {
-      border-radius: 24px 12px 24px 12px;
-    }
-
-    .mini small {
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-
-    .mini strong {
-      color: var(--ink);
-      font-size: 22px;
-      line-height: 1;
-      letter-spacing: -0.03em;
-    }
-
-    .trace {
-      display: grid;
-      gap: 9px;
-      margin-top: 6px;
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--soft);
-    }
-
-    .trace div {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 11px 12px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 14px;
-      background: rgba(0,0,0,0.16);
-    }
-
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    .feature {
-      min-height: 420px;
-      display: grid;
-      align-content: end;
-      gap: 22px;
-      padding: 24px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background:
-        linear-gradient(160deg, rgba(255,255,255,0.1), transparent 42%),
-        rgba(255,255,255,0.04);
-      overflow: hidden;
-      transform: translateY(36px);
-      opacity: 0;
-      transition: opacity 500ms ease, transform 500ms ease, border-color 220ms ease;
-    }
-
-    .feature.revealed {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .feature:nth-child(2) { margin-top: 82px; }
-    .feature:nth-child(3) { margin-top: 34px; }
-
-    .feature:hover {
-      border-color: rgba(215, 255, 122, 0.42);
-    }
-
-    .feature .num {
-      color: var(--gold);
-      font-family: var(--mono);
-      font-size: 12px;
-    }
-
-    .feature h3 {
-      margin: 0;
-      font-family: var(--display);
-      font-size: 34px;
-      line-height: 0.98;
-      letter-spacing: -0.03em;
-    }
-
-    .feature p {
-      margin: 0;
-      color: var(--soft);
-      line-height: 1.6;
-    }
-
-    .api-shell {
-      position: relative;
-      display: grid;
-      grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
-      gap: 34px;
-      align-items: center;
-      min-height: 660px;
-      border: 1px solid rgba(215, 255, 122, 0.28);
-      border-radius: 42px;
-      padding: clamp(24px, 5vw, 56px);
-      background:
-        radial-gradient(circle at 82% 12%, rgba(215,255,122,0.16), transparent 24rem),
-        linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-      overflow: hidden;
-    }
-
-    .api-shell::before {
-      content: "";
-      position: absolute;
-      width: 520px;
-      aspect-ratio: 1;
-      right: -160px;
-      top: -130px;
-      border-radius: 50%;
-      border: 1px solid rgba(215, 255, 122, 0.18);
-      animation: spin 24s linear infinite;
-    }
-
-    .api-copy {
-      position: relative;
-      z-index: 1;
-      transform: translateY(-28px);
-    }
-    .api-copy h2 { font-size: clamp(42px, 5vw, 78px); }
-    .api-copy p {
-      color: var(--soft);
-      font-size: 19px;
-      line-height: 1.6;
-    }
-
-    .api-card {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      gap: 12px;
-      border: 1px solid var(--line-strong);
-      border-radius: 30px;
-      padding: 18px;
-      background: rgba(5,5,6,0.56);
-      backdrop-filter: blur(18px);
-      transform: translateY(42px);
-    }
-
-    .api-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 0 2px 14px;
-      border-bottom: 1px solid var(--line);
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-
-    .api-row {
-      display: grid;
-      grid-template-columns: 122px 1fr;
-      gap: 16px;
-      min-height: 72px;
-      align-items: center;
-      padding: 13px 14px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 18px;
-      background: rgba(255,255,255,0.045);
-    }
-
-    .api-row b {
-      color: var(--gold);
-      font-family: var(--mono);
-      font-size: 12px;
-    }
-
-    .api-row span { color: var(--soft); line-height: 1.45; }
-
-    .launch-support {
-      min-height: 70vh;
-      display: grid;
-      align-items: center;
-      padding: 80px 0 110px;
-    }
-
-    .support-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
-      gap: clamp(28px, 5vw, 72px);
-      align-items: end;
-      border-top: 1px solid var(--line);
-      padding-top: clamp(42px, 7vw, 86px);
-    }
-
-    .support-copy h2 { max-width: 760px; }
-
-    .support-copy p {
-      max-width: 620px;
-      margin: 24px 0 0;
-      color: var(--soft);
-      font-size: 19px;
-      line-height: 1.62;
-    }
-
-    .support-actions {
-      display: grid;
-      gap: 12px;
-    }
-
-    .support-action {
-      display: grid;
-      grid-template-columns: 42px 1fr auto;
-      gap: 16px;
-      align-items: center;
-      min-height: 78px;
-      padding: 14px 18px;
-      border: 1px solid rgba(255,255,255,0.11);
-      border-radius: 22px;
-      background: rgba(255,255,255,0.045);
-      transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
-    }
-
-    .support-action:hover,
-    .support-action:focus-visible {
-      transform: translateY(-2px);
-      border-color: rgba(215,255,122,0.38);
-      background: rgba(255,255,255,0.075);
+    .button:hover,
+    .button:focus-visible {
+      transform: translateY(-1px);
       outline: none;
     }
 
-    .support-action i {
-      width: 42px;
-      height: 42px;
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      background: var(--accent-2);
+    }
+
+    .button.secondary:hover,
+    .button.secondary:focus-visible {
+      background: rgba(255, 255, 255, 0.11);
+      border-color: var(--line-strong);
+    }
+
+    .hero-readout {
+      align-self: end;
+      display: grid;
+      gap: 12px;
+      max-width: 440px;
+      justify-self: end;
+    }
+
+    .readout-panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
+      backdrop-filter: blur(18px);
+    }
+
+    .readout-panel span {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .readout-panel strong {
+      display: block;
+      margin-top: 10px;
+      font-family: var(--block);
+      font-size: clamp(34px, 4vw, 58px);
+      line-height: 1.08;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .readout-panel small {
+      display: block;
+      margin-top: 12px;
+      color: var(--soft);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .section {
+      position: relative;
+      padding: clamp(92px, 11vw, 160px) 0;
+    }
+
+    .section[id] {
+      scroll-margin-top: 92px;
+    }
+
+    .section.compact {
+      padding: clamp(74px, 8vw, 112px) 0;
+    }
+
+    .section-title {
+      max-width: 940px;
+      font-family: var(--display);
+      font-size: clamp(48px, 8vw, 122px);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: 0;
+      text-transform: none;
+      text-wrap: balance;
+    }
+
+    .section-lead {
+      max-width: 650px;
+      margin-top: 24px;
+      color: var(--soft);
+      font-size: clamp(17px, 1.7vw, 22px);
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+
+    .architecture-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.74fr);
+      gap: 22px;
+      margin-top: 54px;
+    }
+
+    .architecture-primary,
+    .architecture-stack > article,
+    .chapter-device,
+    .spec-card,
+    .api-module,
+    .closing-panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.018)),
+        rgba(12, 14, 13, 0.72);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .architecture-primary {
+      min-height: 520px;
+      display: grid;
+      align-content: end;
+      padding: clamp(26px, 4vw, 54px);
+      overflow: hidden;
+    }
+
+    .architecture-primary::before {
+      content: "";
+      position: absolute;
+    }
+
+    .map-field {
+      position: relative;
+      min-height: 250px;
+      margin-bottom: 42px;
+      border-radius: calc(var(--radius) - 4px);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,0.055) 1px, transparent 1px),
+        radial-gradient(circle at 62% 40%, rgba(184, 255, 57, 0.18), transparent 18rem);
+      background-size: 56px 56px, 56px 56px, auto;
+      overflow: hidden;
+    }
+
+    .map-field::after {
+      content: "";
+      position: absolute;
+      inset: 18%;
+      border: 1px solid rgba(184, 255, 57, 0.36);
+      border-radius: 24px;
+      transform: perspective(600px) rotateX(62deg) rotateZ(-18deg);
+      box-shadow: 0 0 70px rgba(184, 255, 57, 0.11);
+    }
+
+    .map-node {
+      position: absolute;
       display: grid;
       place-items: center;
-      border: 1px solid rgba(215,255,122,0.28);
-      border-radius: 14px;
-      color: var(--gold);
-      font-style: normal;
+      width: 96px;
+      height: 42px;
+      border: 1px solid rgba(184, 255, 57, 0.34);
+      border-radius: 999px;
+      color: var(--accent);
+      background: rgba(5, 6, 6, 0.7);
       font-family: var(--mono);
-      font-size: 12px;
-      background: rgba(215,255,122,0.08);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      box-shadow: 0 18px 64px rgba(0, 0, 0, 0.28);
     }
 
-    .support-action strong {
-      display: block;
+    .map-node.forecast { left: 8%; top: 18%; }
+    .map-node.risk { right: 10%; top: 16%; }
+    .map-node.context { left: 18%; bottom: 12%; }
+    .map-node.api { right: 18%; bottom: 14%; }
+
+    .architecture-primary h3,
+    .chapter-device h3,
+    .api-module h3,
+    .closing-panel h2 {
       font-family: var(--display);
-      font-size: 19px;
-      line-height: 1.1;
+      font-size: clamp(30px, 3.2vw, 54px);
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: 0;
+      text-transform: none;
     }
 
-    .support-action span {
-      display: block;
-      margin-top: 5px;
-      color: var(--muted);
-      font-size: 13px;
+    .architecture-primary p,
+    .architecture-stack p,
+    .chapter-device p,
+    .spec-card p,
+    .api-module p,
+    .closing-panel p {
+      color: var(--soft);
+      line-height: 1.55;
+      text-wrap: pretty;
     }
 
-    .support-action em {
-      color: var(--gold);
-      font-style: normal;
+    .architecture-stack {
+      display: grid;
+      gap: 22px;
+    }
+
+    .architecture-stack > article {
+      min-height: 249px;
+      display: grid;
+      align-content: space-between;
+      padding: 26px;
+    }
+
+    .micro-label {
+      color: var(--accent);
       font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .architecture-stack h3 {
+      font-family: var(--display);
+      font-size: clamp(26px, 3vw, 42px);
+      font-weight: 400;
+      line-height: 1.02;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .cinema-break {
+      min-height: 72dvh;
+      display: grid;
+      align-items: center;
+      border-block: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(184, 255, 57, 0.08), transparent 62%),
+        #070808;
+      overflow: hidden;
+    }
+
+    .cinema-break h2 {
+      max-width: 1120px;
+      font-family: var(--display);
+      font-size: clamp(56px, 10vw, 172px);
+      font-weight: 400;
+      line-height: 1.04;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .cinema-break .accent-word {
+      color: var(--accent);
+    }
+
+    .chapter-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.62fr) minmax(0, 1fr);
+      gap: clamp(24px, 4vw, 54px);
+      align-items: start;
+      margin-top: 56px;
+    }
+
+    .chapter-list {
+      position: sticky;
+      top: 104px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .chapter-button {
+      width: 100%;
+      min-height: 70px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0 18px;
+      color: var(--soft);
+      background: rgba(255, 255, 255, 0.032);
+      cursor: pointer;
+      text-align: left;
+      transition: background 180ms var(--ease), color 180ms var(--ease), border-color 180ms var(--ease), transform 180ms var(--ease);
+    }
+
+    .chapter-button b {
+      display: block;
+      font-family: var(--block);
+      font-size: 18px;
+      line-height: 1.1;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .chapter-button span {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 400;
+      text-transform: none;
+    }
+
+    .chapter-button::after {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .chapter-button.active {
+      color: var(--ink);
+      background: rgba(184, 255, 57, 0.1);
+      border-color: rgba(184, 255, 57, 0.42);
+    }
+
+    .chapter-button.active::after {
+      background: var(--accent);
+      box-shadow: 0 0 24px rgba(184, 255, 57, 0.32);
+    }
+
+    .chapter-button:hover,
+    .chapter-button:focus-visible {
+      transform: translateY(-1px);
+      color: var(--ink);
+      border-color: var(--line-strong);
+      outline: none;
+    }
+
+    .chapter-device {
+      min-height: 620px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(240px, 0.52fr);
+      gap: 30px;
+      padding: clamp(24px, 4vw, 46px);
+      overflow: hidden;
+    }
+
+    .device-main {
+      display: grid;
+      align-content: space-between;
+      min-height: 520px;
+    }
+
+    .device-main p {
+      max-width: 540px;
+      margin-top: 20px;
       font-size: 18px;
     }
 
-    .progress {
-      position: fixed;
-      z-index: 40;
-      top: 0;
+    .device-visual {
+      min-height: 250px;
+      margin-top: 42px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: calc(var(--radius) - 2px);
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+        rgba(5, 6, 6, 0.62);
+      background-size: 44px 44px;
+    }
+
+    .scan-line {
+      position: absolute;
       left: 0;
-      width: var(--progress, 0%);
-      height: 3px;
-      background: linear-gradient(90deg, var(--mint), var(--gold));
-      transform-origin: left;
+      right: 0;
+      top: var(--scan, 36%);
+      height: 2px;
+      background: var(--accent);
+      box-shadow: 0 0 36px rgba(184, 255, 57, 0.42);
+      transition: top 520ms var(--ease);
     }
 
-    .footer {
-      padding: 70px 0 44px;
+    .range-band {
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      top: 50%;
+      height: 76px;
+      border: 1px solid rgba(184, 255, 57, 0.34);
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(184, 255, 57, 0.08), rgba(184, 255, 57, 0.2), rgba(184, 255, 57, 0.08));
+      transform: translateY(-50%);
+      overflow: hidden;
+    }
+
+    .range-band .range-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--range-width, 64%);
+      border-radius: inherit;
+      background:
+        linear-gradient(90deg, rgba(184, 255, 57, 0.1), rgba(184, 255, 57, 0.54), rgba(227, 255, 176, 0.18));
+      box-shadow: 0 0 56px rgba(184, 255, 57, 0.22);
+      transition: width 560ms var(--ease);
+    }
+
+    .range-band .range-pulse {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+      transform: translateX(-110%);
+      animation: rangePulse 3.6s var(--ease) infinite;
+      opacity: 0.34;
+    }
+
+    .range-band::before,
+    .range-band::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 12px;
+      height: 92px;
+      border-radius: 999px;
+      background: var(--accent);
+      transform: translateY(-50%);
+    }
+
+    .range-band::before { left: 18%; }
+    .range-band::after { right: 25%; }
+
+    .range-tag {
+      position: absolute;
+      top: calc(50% + 58px);
+      display: inline-flex;
+      min-height: 28px;
+      align-items: center;
+      padding: 0 9px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      color: var(--soft);
+      background: rgba(5, 6, 6, 0.62);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 400;
+      text-transform: none;
+    }
+
+    .range-tag.low { left: 14%; }
+    .range-tag.high { right: 14%; }
+
+    .device-side {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .metric {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: calc(var(--radius) - 2px);
+      padding: 18px;
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .metric span {
+      display: block;
       color: var(--muted);
-      background: rgba(255,255,255,0.025);
-      border-top: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
     }
 
-    .footer-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      padding-bottom: 26px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .footer-top strong {
+    .metric strong {
       display: block;
-      color: var(--ink);
-      font-family: var(--display);
-      font-size: 26px;
-      letter-spacing: -0.02em;
+      margin-top: 10px;
+      font-family: var(--block);
+      font-size: clamp(30px, 4vw, 52px);
+      line-height: 1.08;
+      letter-spacing: 0;
+      text-transform: none;
     }
 
-    .footer-top span {
+    .metric small {
       display: block;
-      max-width: 520px;
       margin-top: 8px;
       color: var(--soft);
-      line-height: 1.55;
-    }
-
-    .footer-search {
-      min-width: min(360px, 100%);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      align-self: center;
-      padding: 15px 18px;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 999px;
-      background: rgba(5,5,6,0.42);
-      color: var(--soft);
-      font-family: var(--mono);
       font-size: 12px;
+      line-height: 1.45;
     }
 
-    .footer-search svg {
-      width: 15px;
-      height: 15px;
-      color: var(--gold);
-    }
-
-    .footer-map {
+    .spec-grid {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: clamp(20px, 4vw, 54px);
-      padding: 34px 0 42px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 54px;
     }
 
-    .footer-col h3 {
-      margin: 0 0 16px;
-      color: var(--ink);
-      font-family: var(--display);
+    .spec-card {
+      min-height: 230px;
+      display: grid;
+      align-content: space-between;
+      padding: 24px;
+    }
+
+    .spec-card strong {
+      display: block;
+      font-family: var(--block);
+      font-size: clamp(26px, 3.3vw, 48px);
+      line-height: 1.08;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .spec-card p {
+      margin-top: 18px;
       font-size: 14px;
     }
 
-    .footer-col a,
-    .footer-col span {
+    .api-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+      gap: 22px;
+      align-items: stretch;
+      margin-top: 54px;
+    }
+
+    .api-module {
+      padding: clamp(24px, 4vw, 44px);
+    }
+
+    .api-module.large {
+      min-height: 520px;
+      display: grid;
+      align-content: space-between;
+    }
+
+    .api-lines {
+      display: grid;
+      gap: 14px;
+      margin-top: 34px;
+    }
+
+    .api-line {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 18px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    .api-line b {
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 400;
+      text-transform: none;
+    }
+
+    .api-line span {
+      color: var(--soft);
+      line-height: 1.5;
+    }
+
+    .api-side {
+      display: grid;
+      gap: 22px;
+    }
+
+    .code-window {
+      position: relative;
+      margin-top: 34px;
+      border: 1px solid rgba(184, 255, 57, 0.22);
+      border-radius: calc(var(--radius) - 2px);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(184, 255, 57, 0.1), transparent 16rem),
+        rgba(2, 3, 3, 0.58);
+    }
+
+    .code-window::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(110deg, transparent 0%, rgba(184, 255, 57, 0.14) 48%, transparent 64%);
+      transform: translateX(-120%);
+      animation: codeSweep 5.8s var(--ease) infinite;
+    }
+
+    .code-window pre {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      padding: 22px;
+      color: var(--soft);
+      font-family: var(--code);
+      font-size: 12px;
+      line-height: 1.75;
+      overflow: auto;
+    }
+
+    .code-window .green {
+      color: var(--accent);
+    }
+
+    .code-window .line {
       display: block;
+      border-radius: 8px;
+      padding: 0 7px;
+      margin-inline: -7px;
+      transition: background 220ms var(--ease), color 220ms var(--ease);
+    }
+
+    .code-window .line.active {
+      color: var(--ink);
+      background: rgba(184, 255, 57, 0.09);
+    }
+
+    .closing {
+      padding-bottom: 110px;
+    }
+
+    .closing-panel {
+      min-height: 520px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr);
+      gap: 28px;
+      align-items: end;
+      padding: clamp(28px, 5vw, 64px);
+      background:
+        radial-gradient(circle at 78% 18%, rgba(184, 255, 57, 0.16), transparent 23rem),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.018)),
+        #0a0c0b;
+    }
+
+    .closing-panel h2 {
+      max-width: 940px;
+      font-size: clamp(52px, 8vw, 118px);
+      line-height: 1.02;
+    }
+
+    .closing-panel p {
+      max-width: 520px;
+      margin-top: 24px;
+      font-size: 18px;
+    }
+
+    .footer {
+      margin-top: 0;
+      padding: clamp(64px, 8vw, 108px) 0 clamp(34px, 5vw, 64px);
+      color: #1c1d1b;
+      background: #f2f2ef;
+      font-family: var(--body);
+    }
+
+    .footer-shell {
+      display: grid;
+      gap: clamp(42px, 6vw, 76px);
+    }
+
+    .footer-shell > * {
+      min-width: 0;
+    }
+
+    .footer-logo {
+      font-family: var(--display);
+      font-size: clamp(48px, 7vw, 92px);
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .footer-links {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(24px, 6vw, 92px);
+      min-width: 0;
+    }
+
+    .footer-col {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      min-width: 0;
+    }
+
+    .footer-col h3 {
+      margin: 0 0 8px;
+      color: #74766f;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.2;
+    }
+
+    .footer-col a {
       width: fit-content;
-      margin-top: 12px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
-      transition: color 180ms ease;
+      color: #1c1d1b;
+      font-size: clamp(20px, 1.7vw, 30px);
+      line-height: 1.2;
+      transition: opacity 160ms var(--ease), transform 160ms var(--ease);
     }
 
     .footer-col a:hover,
     .footer-col a:focus-visible {
-      color: var(--ink);
+      opacity: 0.68;
+      transform: translateX(4px);
       outline: none;
     }
 
-    .social-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
+    .footer-dots {
+      height: 1px;
+      background-image: radial-gradient(circle, rgba(28, 29, 27, 0.52) 1px, transparent 1px);
+      background-size: 10px 1px;
+      background-repeat: repeat-x;
     }
 
-    .social-row a {
-      width: 34px;
-      height: 34px;
+    .footer-bottom,
+    .footer-legal,
+    .footer-social,
+    .footer-tools,
+    .footer-dock {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .footer-bottom,
+    .footer-tools {
+      justify-content: space-between;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .footer-bottom {
+      font-size: 16px;
+    }
+
+    .footer-legal,
+    .footer-social {
+      gap: clamp(16px, 2.6vw, 32px);
+      min-width: 0;
+    }
+
+    .footer-social strong {
+      font-weight: 400;
+    }
+
+    .back-top {
+      width: 72px;
+      height: 72px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 10px;
+      color: #f2f2ef;
+      background: #1c1d1b;
+      transition: transform 180ms var(--ease), background 180ms var(--ease);
+    }
+
+    .back-top::before {
+      content: "";
+      width: 18px;
+      height: 18px;
+      border-top: 2px solid currentColor;
+      border-left: 2px solid currentColor;
+      transform: rotate(45deg) translate(3px, 3px);
+    }
+
+    .back-top:hover,
+    .back-top:focus-visible {
+      transform: translateY(-3px);
+      background: #050606;
+      outline: none;
+    }
+
+    .footer-dock {
+      max-width: 100%;
+      min-width: 0;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 18px;
+      background: rgba(29, 30, 28, 0.92);
+      box-shadow: 0 22px 70px rgba(5, 6, 6, 0.22);
+      backdrop-filter: blur(18px);
+    }
+
+    .footer-dock a {
+      min-height: 52px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      border-radius: 12px;
+      color: #f2f2ef;
+      background: rgba(255, 255, 255, 0.07);
+      white-space: nowrap;
+      transition: transform 160ms var(--ease), background 160ms var(--ease);
+    }
+
+    .footer-dock a:hover,
+    .footer-dock a:focus-visible {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.14);
+      outline: none;
+    }
+
+    .footer-dock .dock-logo {
+      min-width: 70px;
+      padding: 0 16px;
+      font-family: var(--display);
+      font-size: 29px;
+      background: #111210;
+    }
+
+    .footer-dock .dock-visit {
+      color: #1c1d1b;
+      background: #f2f2ef;
+    }
+
+    .footer-dock .dock-visit:hover,
+    .footer-dock .dock-visit:focus-visible {
+      background: #ffffff;
+    }
+
+    .transition-curtain {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
       display: grid;
       place-items: center;
-      margin: 0;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 50%;
-      background: rgba(255,255,255,0.045);
+      pointer-events: none;
+      background: #f4f5ef;
+      color: #050606;
+      transform: translateY(101%);
+      transition: transform 520ms var(--ease);
     }
 
-    .social-row svg {
-      width: 15px;
-      height: 15px;
+    .transition-curtain.active {
+      transform: translateY(0);
     }
 
-    .footer-inner {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      border-top: 1px solid var(--line);
-      padding-top: 22px;
+    .transition-curtain.leaving {
+      transform: translateY(-101%);
+    }
+
+    .transition-curtain span {
+      font-family: var(--display);
+      font-size: clamp(54px, 9vw, 150px);
+      font-weight: 400;
+      line-height: 1.04;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 780ms var(--ease), transform 780ms var(--ease);
+    }
+
+    .reveal.in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .boot-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      transition: transform 900ms var(--ease);
+    }
+
+    .boot-mask.loaded {
+      transform: translateY(-101%);
+    }
+
+    .boot-mask strong {
+      color: var(--accent);
       font-family: var(--mono);
       font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
     }
 
-    @keyframes floatOrb {
-      0%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
-      50% { transform: translateY(-18px) rotateX(5deg) rotateY(-6deg); }
+    @keyframes marquee {
+      to {
+        transform: translateX(-50%);
+      }
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    @keyframes backdropLensDrift {
+      0% {
+        transform: translate3d(-10vw, -4vh, 0) scale(0.94);
+      }
+      45% {
+        transform: translate3d(-24vw, 18vh, 0) scale(1.02);
+      }
+      100% {
+        transform: translate3d(2vw, 30vh, 0) scale(0.88);
+      }
     }
 
-    @keyframes contractDrift {
-      0%, 100% { transform: rotate(12deg) translate3d(0, 0, 0); }
-      50% { transform: rotate(8deg) translate3d(-18px, 12px, 0); }
+    @keyframes backdropCodeDrift {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1.42);
+      }
+      100% {
+        transform: translate3d(86px, 52px, 0) scale(1.42);
+      }
     }
 
-    @keyframes launchRise {
-      from { opacity: 0; transform: translateY(34px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes rangePulse {
+      54%, 100% {
+        transform: translateX(112%);
+      }
     }
 
-    @keyframes launchScale {
-      from { opacity: 0; transform: translateX(-50%) translateY(46px) scale(0.96); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-    }
-
-    @keyframes sweep {
-      0%, 58% { transform: translateX(-120%); }
-      82%, 100% { transform: translateX(120%); }
+    @keyframes codeSweep {
+      42%, 100% {
+        transform: translateX(120%);
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
       *::after {
-        animation-duration: 0.01ms !important;
+        animation-duration: 0.001ms !important;
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
-        transition-duration: 0.01ms !important;
+        transition-duration: 0.001ms !important;
+      }
+
+      .transition-curtain {
+        display: none;
       }
     }
 
-    @media (max-width: 1020px) {
-      .hero-grid,
-      .sticky-show,
-      .api-shell,
-      .support-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .device-wrap {
-        position: relative;
-        top: auto;
-        min-height: auto;
-      }
-
-      .chapter {
-        min-height: 36vh;
-      }
-
-      .gallery {
-        grid-template-columns: 1fr;
-      }
-
-      .feature {
-        min-height: 290px;
-      }
-
-      .feature:nth-child(2),
-      .feature:nth-child(3) {
-        margin-top: 0;
-      }
-
-      .api-copy,
-      .api-card {
-        transform: none;
-      }
-
-      .cinema-copy p {
-        margin-left: 0;
-      }
-
-      .cinema-visual {
-        min-height: 560px;
-      }
-
-      .media-chip.one,
-      .media-chip.two,
-      .media-chip.three {
-        position: relative;
-        top: auto;
-        right: auto;
-        bottom: auto;
-        left: auto;
-        width: 100%;
-        margin: 12px auto 0;
-      }
-
+    @media (max-width: 1040px) {
       .nav-inner {
-        width: min(100% - 36px, 1440px);
+        grid-template-columns: 1fr auto;
       }
 
-      .search-link {
-        min-width: 174px;
+      .nav-links {
+        display: none;
       }
 
-      .footer-top {
-        flex-direction: column;
+      .hero-content,
+      .architecture-grid,
+      .chapter-layout,
+      .chapter-device,
+      .api-grid,
+      .closing-panel {
+        grid-template-columns: 1fr;
       }
 
-      .footer-map {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+      .hero-readout {
+        justify-self: start;
+        width: min(100%, 560px);
+      }
+
+      .chapter-list {
+        position: static;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .spec-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .footer-links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
     @media (max-width: 720px) {
-      .wrap { width: min(100% - 28px, 1180px); }
-      .nav { min-height: 78px; padding: 10px 0; }
-      .nav-inner { width: calc(100% - 24px); }
-      .nav-links { display: none; }
-      .nav-utility { gap: 6px; }
-      .search-link,
-      .contact-link {
-        min-width: 42px;
-        width: 42px;
-        justify-content: center;
-        padding: 0;
-      }
-      .search-link span,
-      .contact-link span {
-        display: none;
-      }
-      .brand strong { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
-      .hero { padding-top: 116px; }
-      .orb-stage { min-height: 480px; }
-      .spec-float { position: relative; width: 100%; }
-      .spec-float.one,
-      .spec-float.two,
-      .spec-float.three {
-        top: auto;
-        right: auto;
-        bottom: auto;
-        left: auto;
-      }
-      .orb-stage {
-        gap: 12px;
-      }
-      .mini-grid,
-      .api-row {
-        grid-template-columns: 1fr;
-      }
-      .device {
-        min-height: auto;
-        border-radius: 28px;
-      }
-      .screen {
-        min-height: auto;
-      }
-      .support-action {
-        grid-template-columns: 38px 1fr;
-      }
-      .support-action em {
-        display: none;
-      }
-      .footer-map {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      .footer-inner {
-        flex-direction: column;
+      .wrap,
+      .nav-inner {
+        width: min(100% - 28px, var(--max));
       }
 
-      .breakout-title,
-      .breakout-title.hero-title,
-      .breakout-title.stage-right,
-      .breakout-title.api-title {
-        left: 0;
+      .nav {
+        height: 66px;
+      }
+
+      .brand-copy span,
+      .nav-action {
+        display: none;
+      }
+
+      .hero {
+        min-height: auto;
+        padding: 106px 0 42px;
+      }
+
+      .code-backdrop {
+        opacity: 0.26;
+      }
+
+      .code-backdrop > pre {
+        right: -76vw;
+        top: 12vh;
+        width: 760px;
+      }
+
+      .code-backdrop-loupe {
+        right: -12vw;
+        top: 18vh;
+        width: 190px;
+      }
+
+      .hero-shade {
+        background:
+          linear-gradient(180deg, rgba(5, 6, 6, 0.78) 0%, rgba(5, 6, 6, 0.44) 42%, #050606 100%),
+          linear-gradient(90deg, rgba(5, 6, 6, 0.88), rgba(5, 6, 6, 0.44));
+      }
+
+      .hero-stage {
+        height: 560px;
+      }
+
+      .hero-content {
+        align-items: start;
+      }
+
+      h1 {
+        font-size: clamp(48px, 15.8vw, 66px);
+        line-height: 1.05;
+      }
+
+      .hero-copy {
+        max-width: 100%;
+      }
+
+      .hero-readout {
+        margin-top: 80px;
+      }
+
+      .section,
+      .section.compact {
+        padding: 74px 0;
+      }
+
+      .architecture-primary {
+        min-height: auto;
+      }
+
+      .map-field {
+        min-height: 220px;
+      }
+
+      .chapter-list,
+      .spec-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chapter-device {
+        min-height: auto;
+      }
+
+      .device-main {
+        min-height: auto;
+      }
+
+      .api-line {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .code-window pre {
+        font-size: 11px;
+      }
+
+      .closing-panel {
+        min-height: auto;
+      }
+
+      .footer {
+        padding-bottom: 34px;
+      }
+
+      .footer-links {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 26px;
+      }
+
+      .footer-bottom,
+      .footer-tools {
+        align-items: flex-start;
+        justify-content: flex-start;
+      }
+
+      .footer-dock {
         width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+      }
+
+      .footer-dock a {
+        min-height: 48px;
+        padding: 0 14px;
+      }
+
+      .back-top {
+        width: 58px;
+        height: 58px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="progress" aria-hidden="true"></div>
+  <div class="boot-mask" id="bootMask"><strong>Loading launch surface</strong></div>
+  <div class="transition-curtain" id="curtain" aria-hidden="true"><span id="curtainText">Launch</span></div>
+  <div class="code-backdrop" aria-hidden="true">
+    <pre><span class="dim">const</span> budgetContract = {
+  <span class="hot">mode</span>: "bounded_run",
+  <span class="hot">forecast</span>: { low: "8k", high: "40k" },
+  <span class="hot">risk</span>: "medium",
+  <span class="hot">route</span>: "tests_and_routes",
+  contextDiet: ["routes", "tests", "changed_files"],
+  stopAt: "budget_ceiling",
+  approval: "ask_before_expansion"
+}
 
-  <nav class="nav" aria-label="Primary">
+runAgent({
+  contract: budgetContract,
+  firstPass: "read_target_surface",
+  verify: "before_broad_edit"
+})</pre>
+    <div class="code-backdrop-loupe">
+      <pre><span class="dim">const</span> budgetContract = {
+  <span class="hot">mode</span>: "bounded_run",
+  <span class="hot">forecast</span>: { low: "8k", high: "40k" },
+  <span class="hot">risk</span>: "medium",
+  <span class="hot">route</span>: "tests_and_routes",
+  contextDiet: ["routes", "tests", "changed_files"],
+  stopAt: "budget_ceiling",
+  approval: "ask_before_expansion"
+}
+
+runAgent({
+  contract: budgetContract,
+  firstPass: "read_target_surface",
+  verify: "before_broad_edit"
+})</pre>
+    </div>
+  </div>
+
+  <nav class="nav" aria-label="Primary navigation">
     <div class="nav-inner">
-      <a class="brand" href="#top">
-        <span class="mark" aria-hidden="true">
-          <svg viewBox="0 0 48 48" role="img">
-            <defs>
-              <linearGradient id="markGlow" x1="8" y1="7" x2="42" y2="40" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#f6f4ee"/>
-                <stop offset="0.48" stop-color="#d7ff7a"/>
-                <stop offset="1" stop-color="#7dffca"/>
-              </linearGradient>
-            </defs>
-            <path d="M9 12.5 24 5l15 7.5v17.8L24 43 9 30.3V12.5Z" fill="rgba(215,255,122,0.08)" stroke="url(#markGlow)" stroke-width="1.7"/>
-            <path d="M15 17.2 24 12l9 5.2-9 5.4-9-5.4Z" fill="rgba(246,244,238,0.2)" stroke="rgba(246,244,238,0.34)" stroke-width="1"/>
-            <path d="M15 21.8 24 27l9-5.2v9.1L24 38l-9-7.1v-9.1Z" fill="rgba(125,255,202,0.12)" stroke="rgba(215,255,122,0.46)" stroke-width="1"/>
-            <path d="M24 12v26" stroke="rgba(246,244,238,0.38)" stroke-width="1"/>
-            <path d="M17.5 30.5h13" stroke="#d7ff7a" stroke-width="2.1" stroke-linecap="round"/>
-          </svg>
-        </span>
-        <span>
+      <a class="brand" href="#top" data-transition="Launch">
+        <span class="brand-mark" aria-hidden="true">tb.</span>
+        <span class="brand-copy">
           <strong>Token Budget Estimator</strong>
-          <span>preflight for agent work</span>
+          <span>Preflight control system</span>
         </span>
       </a>
-      <div class="nav-links">
-        <a href="#top">Product</a>
-        <a href="#showcase">Showcase</a>
-        <a href="#forecast">Forecast</a>
-        <a href="#engine">Engine</a>
-        <a href="#api">Paid API</a>
-        <a href="#contact">Contact</a>
+      <div class="nav-links" aria-label="Page sections">
+        <a class="nav-link" href="#architecture" data-transition="Architecture">Architecture</a>
+        <a class="nav-link" href="#forecast" data-transition="Forecast">Forecast</a>
+        <a class="nav-link" href="#specs" data-transition="Control">Control</a>
+        <a class="nav-link" href="#api" data-transition="API Layer">API</a>
       </div>
-      <div class="nav-utility">
-        <a class="search-link" href="#forecast" aria-label="Search product modules">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="m20 20-4.6-4.6M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-          <span>Search modules</span>
-        </a>
-        <a class="contact-link" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 3.5a8.7 8.7 0 0 0-2.75 16.95c.44.08.6-.19.6-.42v-1.5c-2.44.53-2.95-1.04-2.95-1.04-.4-1.02-.98-1.29-.98-1.29-.8-.55.06-.54.06-.54.88.06 1.35.91 1.35.91.79 1.34 2.06.95 2.56.73.08-.57.31-.95.56-1.17-1.95-.22-4-1-4-4.33 0-.96.34-1.74.9-2.35-.09-.22-.39-1.12.09-2.32 0 0 .74-.24 2.4.9a8.2 8.2 0 0 1 4.38 0c1.67-1.14 2.4-.9 2.4-.9.49 1.2.18 2.1.09 2.32.57.61.9 1.39.9 2.35 0 3.34-2.05 4.1-4 4.32.32.28.6.82.6 1.65v2.45c0 .23.16.5.61.42A8.7 8.7 0 0 0 12 3.5Z" fill="currentColor"/>
-          </svg>
-          <span>GitHub</span>
-        </a>
+      <div class="nav-action">
+        <a class="nav-cta" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">GitHub</a>
       </div>
     </div>
   </nav>
 
   <main id="top">
-    <section class="hero wrap">
-      <div class="hero-grid">
+    <section class="hero">
+      <div class="hero-stage" aria-hidden="true">
+        <canvas id="engineCanvas"></canvas>
+        <div class="hero-shade"></div>
+      </div>
+      <div class="wrap hero-content">
         <div>
-          <div class="kicker">Dynamic launch preview</div>
-          <h1 class="breakout-title hero-title">Agent work, budgeted before takeoff.</h1>
-          <p class="hero-copy">A Codex-native preflight layer that predicts token burn, evaluates ROI, writes a budget contract, and tells the agent where context deserves to go first.</p>
+          <div class="hero-kicker">Agent work performance layer</div>
+          <h1>Forecast before you spend.</h1>
+          <p class="hero-copy">A launch-grade preflight surface for agent tasks: estimate the token range, risk shape, and context load before execution starts.</p>
           <div class="hero-actions">
-            <a class="cta" href="#forecast">Enter product story</a>
-            <a class="cta ghost" href="#api">Paid API interface</a>
+            <a class="button primary" href="#architecture" data-transition="Architecture">View architecture</a>
+            <a class="button secondary" href="#forecast" data-transition="Forecast">Open forecast</a>
           </div>
         </div>
-
-        <div class="orb-stage" aria-label="Animated token forecast visual">
-          <div class="orbit"></div>
-          <div class="orbit"></div>
-          <div class="orbit"></div>
-          <div class="forecast-sculpture">
-            <div class="token-orb">
-              <div class="orb-core">
-                <div>
-                  <strong data-count="64">0</strong>
-                  <span>k high estimate</span>
-                </div>
-              </div>
-            </div>
+        <aside class="hero-readout" aria-label="Example budget readout">
+          <div class="readout-panel">
+            <span>Example task range</span>
+            <strong>8k to 40k</strong>
+            <small>Shown as a sample interval, not a promise of exact usage.</small>
           </div>
-          <div class="spec-float one"><b>4</b><span>preflight modules</span></div>
-          <div class="spec-float two"><b>3</b><span>execution modes</span></div>
-          <div class="spec-float three"><b>1</b><span>budget contract</span></div>
-          <div class="scroll-cue">scroll to reveal</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="showcase-section" id="showcase">
-      <div class="wrap">
-        <div class="cinema-copy">
-          <span class="section-label">00 / Big picture</span>
-          <h2>See the budget before the work begins.</h2>
-          <p>A launch-style product surface for the invisible part of agent execution: risk, cost, boundaries, and the first context path.</p>
-        </div>
-      </div>
-      <div class="cinema-visual" aria-label="Large animated product image">
-        <canvas class="three-stage" id="threeScene" aria-hidden="true"></canvas>
-        <div class="signal-arc"></div>
-        <div class="mega-readout" data-depth="0.18">
-          <span>LIVE PREFLIGHT IMAGE</span>
-          <strong>18k-64k</strong>
-          <small>One estimate becomes a full decision surface before Codex reads broadly or runs expensive commands.</small>
-        </div>
-        <div class="mega-screen" data-depth="-0.1"></div>
-        <div class="media-chip one" data-depth="0.32"><b>ROI</b><span>execute now or split first</span></div>
-        <div class="media-chip two" data-depth="0.44"><b>14</b><span>file-read contract</span></div>
-        <div class="media-chip three" data-depth="0.24"><b>80</b><span>log-line ceiling</span></div>
-      </div>
-    </section>
-
-    <section class="section wrap" id="forecast">
-      <div class="section-head">
-        <span class="section-label">01 / Forecast cockpit</span>
-        <h2 class="breakout-title">One sticky screen. Four product moments.</h2>
-        <p>Like a device launch page, the product UI stays on stage while the story moves around it. Each scroll step changes the forecast screen and reveals a new part of the preflight decision.</p>
-      </div>
-
-      <div class="sticky-show">
-        <div class="chapters">
-          <article class="chapter active" data-step="0" data-meter="46" data-range="18k-64k" data-roi="execute_now" data-contract="14 files" data-risk="medium">
-            <code>Token Forecast</code>
-            <h3>Predict the whole run, not just the prompt.</h3>
-            <p>It accounts for file reads, searches, command output, failed tests, retries, analysis, and the final answer.</p>
-          </article>
-          <article class="chapter" data-step="1" data-meter="72" data-range="90k-240k" data-roi="split_first" data-contract="discovery cap" data-risk="high">
-            <code>ROI Assessor</code>
-            <h3>Decide whether the task deserves execution.</h3>
-            <p>High-uncertainty work gets pushed toward discovery, decomposition, or a smaller first pass.</p>
-          </article>
-          <article class="chapter" data-step="2" data-meter="58" data-range="32k-112k" data-roi="budgeted_run" data-contract="4 commands" data-risk="medium">
-            <code>Budget Contract</code>
-            <h3>Give Codex a boundary before it moves.</h3>
-            <p>Readable files, command count, log limits, retry rules, and stop conditions become part of the execution plan.</p>
-          </article>
-          <article class="chapter" data-step="3" data-meter="34" data-range="9k-38k" data-roi="start_narrow" data-contract="diet first" data-risk="low">
-            <code>Context Diet</code>
-            <h3>Spend the first tokens where signal is highest.</h3>
-            <p>The agent reads the nearest evidence first and expands only when the estimate says it is worth it.</p>
-          </article>
-        </div>
-
-        <aside class="device-wrap" aria-label="Dynamic preflight panel">
-          <div class="device">
-            <div class="device-top">
-              <div class="device-lights"><span></span><span></span><span></span></div>
-              <span id="deviceMode">PREFLIGHT / TOKEN FORECAST</span>
-            </div>
-            <div class="screen">
-              <div class="forecast-title">
-                <span>projected token interval</span>
-                <span id="riskText">medium risk</span>
-              </div>
-              <div class="big-forecast"><span id="rangeText">18k-64k</span></div>
-              <div class="meter" aria-hidden="true"><div class="meter-bar" id="meterBar"></div></div>
-              <div class="mini-grid">
-                <div class="mini"><small>ROI</small><strong id="roiText">execute_now</strong></div>
-                <div class="mini"><small>CONTRACT</small><strong id="contractText">14 files</strong></div>
-                <div class="mini"><small>CONTEXT</small><strong id="dietText">tests first</strong></div>
-                <div class="mini"><small>CONFIDENCE</small><strong id="confidenceText">calibrating</strong></div>
-              </div>
-              <div class="trace">
-                <div><span>prompt + current context</span><span id="traceA">8k</span></div>
-                <div><span>repo discovery exposure</span><span id="traceB">16k</span></div>
-                <div><span>command and log exposure</span><span id="traceC">40k</span></div>
-              </div>
-            </div>
+          <div class="readout-panel">
+            <span>Budget mode</span>
+            <strong>Bounded run</strong>
+            <small>Split, stage, or stop when the work exceeds the chosen budget contract.</small>
           </div>
         </aside>
       </div>
     </section>
 
-    <section class="section wrap" id="engine">
-      <div class="section-head">
-        <span class="section-label">02 / Product engine</span>
-        <h2 class="breakout-title stage-right">Not a token counter. A decision system.</h2>
-        <p>The useful part is not pretending to be exact. The useful part is turning uncertainty into a safer execution path.</p>
-      </div>
-      <div class="gallery">
-        <article class="feature">
-          <span class="num">Forecast Range</span>
-          <h3>Outputs intervals, not fake precision.</h3>
-          <p>Every estimate is a range because agent work is path-dependent. The system admits uncertainty instead of hiding it.</p>
-        </article>
-        <article class="feature">
-          <span class="num">Risk Routing</span>
-          <h3>Moves big tasks into smaller launches.</h3>
-          <p>High-budget work gets pushed toward discovery, split plans, or bounded execution before the agent touches the repo broadly.</p>
-        </article>
-        <article class="feature">
-          <span class="num">History Calibration</span>
-          <h3>Learns from actual usage over time.</h3>
-          <p>Recorded outcomes can tune future forecasts by task type, making the estimator more useful inside real workflows.</p>
-        </article>
-      </div>
-    </section>
+    <section class="section wrap reveal" id="architecture">
+      <h2 class="section-title">Built like a performance architecture.</h2>
+      <p class="section-lead">The estimator is not a counter. It is a control layer that turns agent uncertainty into a launch decision.</p>
 
-    <section class="section wrap" id="api">
-      <div class="api-shell">
-        <div class="api-copy">
-          <span class="section-label">03 / Reserved commercial surface</span>
-          <h2 class="breakout-title api-title">Paid API, designed as the team layer.</h2>
-          <p>The plugin keeps a future paid interface for heavier users: shared budget policy, team calibration history, multi-task comparison, and portable budget contracts that can follow work across agents or CI.</p>
-          <p>This page only presents the product surface. Operational details belong in documentation when the interface is ready.</p>
-        </div>
-        <div class="api-card" aria-label="Paid API capability panel">
-          <div class="api-head"><span>PAID API INTERFACE</span><span>RESERVED</span></div>
-          <div class="api-row"><b>Forecast</b><span>Batch estimates for planned agent work and review queues.</span></div>
-          <div class="api-row"><b>Policy</b><span>Team-level budget ceilings, stop-loss rules, and execution modes.</span></div>
-          <div class="api-row"><b>History</b><span>Actual usage feedback for continuous calibration by task type.</span></div>
-          <div class="api-row"><b>Contract</b><span>Portable budget boundaries for Codex and other agent systems.</span></div>
+      <div class="architecture-grid">
+        <article class="architecture-primary">
+          <div class="map-field" aria-hidden="true">
+            <span class="map-node forecast">Forecast</span>
+            <span class="map-node risk">Risk</span>
+            <span class="map-node context">Context</span>
+            <span class="map-node api">API</span>
+          </div>
+          <h3>One preflight pass before the expensive run.</h3>
+          <p style="margin-top: 18px;">A task gets routed through scope, context weight, expected tool activity, and execution risk before the agent touches broad repo state.</p>
+        </article>
+
+        <div class="architecture-stack">
+          <article>
+            <span class="micro-label">Forecast engine</span>
+            <div>
+              <h3>Intervals over fake precision.</h3>
+              <p style="margin-top: 16px;">Agent work is path-dependent, so the product reports a usable range and the reason behind it.</p>
+            </div>
+          </article>
+          <article>
+            <span class="micro-label">Control contract</span>
+            <div>
+              <h3>Budget boundaries that travel.</h3>
+              <p style="margin-top: 16px;">Each estimate can become a contract for mode, stop-loss behavior, and escalation.</p>
+            </div>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="launch-support wrap" id="contact">
-      <div class="support-grid">
-        <div class="support-copy">
-          <span class="section-label">04 / After the launch</span>
-          <h2>Built for teams that want agent work to feel accountable.</h2>
-          <p>Keep the public page focused on product story, then route serious users toward the repository, API discussion, roadmap, and calibration ideas.</p>
+    <section class="cinema-break reveal" aria-label="Launch statement">
+      <div class="wrap">
+        <h2>Every agent run needs a <span class="accent-word">budget core.</span></h2>
+      </div>
+    </section>
+
+    <section class="section wrap reveal" id="forecast">
+      <h2 class="section-title">Four controls. One preflight decision.</h2>
+      <p class="section-lead">The launch page uses chapters like a product reveal, but each chapter maps to a real planning surface.</p>
+
+      <div class="chapter-layout">
+        <div class="chapter-list" aria-label="Forecast controls">
+          <button class="chapter-button active" type="button" data-mode="forecast">
+            <span>Range</span>
+            <b>Token forecast</b>
+          </button>
+          <button class="chapter-button" type="button" data-mode="risk">
+            <span>Route</span>
+            <b>Risk routing</b>
+          </button>
+          <button class="chapter-button" type="button" data-mode="contract">
+            <span>Boundary</span>
+            <b>Budget contract</b>
+          </button>
+          <button class="chapter-button" type="button" data-mode="diet">
+            <span>Context</span>
+            <b>Context diet</b>
+          </button>
         </div>
-        <div class="support-actions" aria-label="Project contact and resource links">
-          <a class="support-action" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">
-            <i>GH</i>
-            <span><strong>GitHub repository</strong><span>Source, README, releases, and project updates.</span></span>
-            <em>+</em>
-          </a>
-          <a class="support-action" href="#api">
-            <i>API</i>
-            <span><strong>Paid interface</strong><span>Reserved surface for team usage and budget policy.</span></span>
-            <em>+</em>
-          </a>
-          <a class="support-action" href="#forecast">
-            <i>ROI</i>
-            <span><strong>Forecast experience</strong><span>Token interval, risk, contract, and context diet preview.</span></span>
-            <em>+</em>
-          </a>
+
+        <article class="chapter-device" id="chapterDevice">
+          <div class="device-main">
+            <div>
+              <span class="micro-label" id="deviceEyebrow">Token forecast</span>
+              <h3 id="deviceTitle">Estimate the likely token interval before execution.</h3>
+              <p id="deviceCopy">The estimator reports a range, explains why the spread exists, and helps decide whether to run, split, or scope down.</p>
+            </div>
+            <div class="device-visual" aria-hidden="true">
+              <div class="range-band" id="rangeBand">
+                <span class="range-fill"></span>
+                <span class="range-pulse"></span>
+              </div>
+              <span class="range-tag low" id="rangeLow">8k</span>
+              <span class="range-tag high" id="rangeHigh">40k</span>
+              <div class="scan-line" id="scanLine"></div>
+            </div>
+          </div>
+          <div class="device-side">
+            <div class="metric">
+              <span>Sample range</span>
+              <strong id="metricRange">8k to 40k</strong>
+              <small>Example interval for a medium repo task.</small>
+            </div>
+            <div class="metric">
+              <span>Decision</span>
+              <strong id="metricDecision">Run scoped</strong>
+              <small id="metricNote">Proceed with bounded files and tests first.</small>
+            </div>
+            <div class="metric">
+              <span>Output</span>
+              <strong id="metricOutput">Contract</strong>
+              <small>Forecast, risk, scope, and stop conditions.</small>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section compact wrap reveal" id="specs">
+      <h2 class="section-title">Control surfaces, not decoration.</h2>
+      <p class="section-lead">The visual system should feel like a hardware reveal, but the content stays grounded in the product logic.</p>
+
+      <div class="spec-grid">
+        <article class="spec-card">
+          <span class="micro-label">Scope</span>
+          <div>
+            <strong>Task shape</strong>
+            <p>Reads intent, likely code surface, and verification cost before the agent runs.</p>
+          </div>
+        </article>
+        <article class="spec-card">
+          <span class="micro-label">Range</span>
+          <div>
+            <strong>Budget band</strong>
+            <p>Shows a practical lower and upper bound instead of a single fragile estimate.</p>
+          </div>
+        </article>
+        <article class="spec-card">
+          <span class="micro-label">Route</span>
+          <div>
+            <strong>Run mode</strong>
+            <p>Suggests direct execution, discovery first, staged work, or user approval gates.</p>
+          </div>
+        </article>
+        <article class="spec-card">
+          <span class="micro-label">Diet</span>
+          <div>
+            <strong>Context load</strong>
+            <p>Highlights which files, docs, and traces are worth loading for the first pass.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section wrap reveal" id="api">
+      <h2 class="section-title">Reserved for the team layer.</h2>
+      <p class="section-lead">The paid API can be presented as the professional control plane: batch estimates, policy, calibration, and budget contracts.</p>
+
+      <div class="api-grid">
+        <article class="api-module large">
+          <div>
+            <span class="micro-label">API interface</span>
+            <h3 style="margin-top: 20px;">Forecast policy for teams that run agents every day.</h3>
+          </div>
+          <div class="api-lines">
+            <div class="api-line"><b>Batch</b><span>Estimate planned work queues before spending a shared budget.</span></div>
+            <div class="api-line"><b>Policy</b><span>Apply team-level ceilings, stop-loss rules, and approval modes.</span></div>
+            <div class="api-line"><b>History</b><span>Use actual outcomes to calibrate future estimates by task type.</span></div>
+          </div>
+        </article>
+        <div class="api-side">
+          <article class="api-module">
+            <span class="micro-label">Contract output</span>
+            <div class="code-window" aria-label="Example budget contract">
+              <pre><span class="line active">{</span><span class="line">  <span class="green">"mode"</span>: "bounded_run",</span><span class="line">  <span class="green">"range"</span>: "8k to 40k",</span><span class="line">  <span class="green">"risk"</span>: "medium",</span><span class="line">  <span class="green">"first_pass"</span>: "tests_and_routes",</span><span class="line">  <span class="green">"stop_at"</span>: "budget_ceiling"</span><span class="line">}</span></pre>
+            </div>
+          </article>
+          <article class="api-module">
+            <span class="micro-label">Launch narrative</span>
+            <h3 style="margin-top: 20px;">A product story with real surfaces.</h3>
+            <p style="margin-top: 18px;">The redesign keeps the cinematic feeling, but the screenshots become real controls, contract examples, and planning outputs.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing wrap reveal">
+      <div class="closing-panel">
+        <div>
+          <h2>Make token planning feel launch-ready.</h2>
+          <p>This is a fresh design direction, built separately from the current site so you can compare before replacing anything.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="button primary" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">Open repository</a>
+          <a class="button secondary" href="#top" data-transition="Launch">Replay top</a>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="footer">
-    <div class="wrap">
-      <div class="footer-top">
-        <div>
-          <strong>Token Budget Estimator</strong>
-          <span>A preflight product surface for forecasting agent execution before tokens are already spent.</span>
-        </div>
-        <a class="footer-search" href="#forecast">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="m20 20-4.6-4.6M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-          Search forecast modules
-        </a>
-      </div>
-      <div class="footer-map">
+  <footer class="footer" id="footer">
+    <div class="wrap footer-shell">
+      <div class="footer-logo">tb.</div>
+      <div class="footer-links" aria-label="Footer navigation">
         <div class="footer-col">
           <h3>Product</h3>
-          <a href="#showcase">Launch image</a>
-          <a href="#forecast">Forecast cockpit</a>
-          <a href="#engine">Decision engine</a>
-          <a href="#api">Paid API</a>
+          <a href="#architecture" data-transition="Architecture">Architecture</a>
+          <a href="#forecast" data-transition="Forecast">Forecast</a>
+          <a href="#specs" data-transition="Control">Control</a>
         </div>
         <div class="footer-col">
-          <h3>Modules</h3>
-          <a href="#forecast">Token Forecast</a>
-          <a href="#forecast">ROI Assessor</a>
-          <a href="#forecast">Budget Contract</a>
-          <a href="#forecast">Context Diet</a>
+          <h3>Build</h3>
+          <a href="#api" data-transition="API Layer">API layer</a>
+          <a href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">Repository</a>
+          <a href="#top" data-transition="Launch">Launch surface</a>
         </div>
         <div class="footer-col">
-          <h3>Team Layer</h3>
-          <a href="#api">Shared policy</a>
-          <a href="#api">Batch estimates</a>
-          <a href="#api">Calibration history</a>
-          <a href="#api">Portable contracts</a>
+          <h3>Output</h3>
+          <a href="#forecast" data-transition="Forecast">Budget range</a>
+          <a href="#specs" data-transition="Control">Context diet</a>
+          <a href="#api" data-transition="API Layer">Contract JSON</a>
         </div>
         <div class="footer-col">
-          <h3>Project</h3>
-          <a href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">GitHub</a>
-          <a href="https://yuk1207.github.io/token-budget-estimator/" target="_blank" rel="noreferrer">Live demo</a>
-          <a href="#contact">Contact</a>
-          <a href="#top">Back to top</a>
-        </div>
-        <div class="footer-col">
-          <h3>Signals</h3>
-          <span>Range-first estimates</span>
-          <span>Risk-aware routing</span>
-          <span>Stop-loss boundaries</span>
-          <span>History calibration</span>
-        </div>
-        <div class="footer-col">
-          <h3>Follow</h3>
-          <span>Open source project</span>
-          <div class="social-row">
-            <a href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer" aria-label="GitHub repository">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 3.5a8.7 8.7 0 0 0-2.75 16.95c.44.08.6-.19.6-.42v-1.5c-2.44.53-2.95-1.04-2.95-1.04-.4-1.02-.98-1.29-.98-1.29-.8-.55.06-.54.06-.54.88.06 1.35.91 1.35.91.79 1.34 2.06.95 2.56.73.08-.57.31-.95.56-1.17-1.95-.22-4-1-4-4.33 0-.96.34-1.74.9-2.35-.09-.22-.39-1.12.09-2.32 0 0 .74-.24 2.4.9a8.2 8.2 0 0 1 4.38 0c1.67-1.14 2.4-.9 2.4-.9.49 1.2.18 2.1.09 2.32.57.61.9 1.39.9 2.35 0 3.34-2.05 4.1-4 4.32.32.28.6.82.6 1.65v2.45c0 .23.16.5.61.42A8.7 8.7 0 0 0 12 3.5Z" fill="currentColor"/>
-              </svg>
-            </a>
-            <a href="#contact" aria-label="Contact section">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M5 7.5h14v9H5v-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-                <path d="m5.5 8 6.5 5 6.5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </a>
-          </div>
+          <h3>Contact</h3>
+          <a href="https://github.com/YUK1207" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://yuk1207.github.io/token-budget-estimator/" target="_blank" rel="noreferrer">Current site</a>
+          <a href="#top" data-transition="Replay">Replay</a>
         </div>
       </div>
-      <div class="footer-inner">
-        <span>Token Budget Estimator</span>
-        <span>Forecast. Assess ROI. Contract. Diet context.</span>
+      <div class="footer-dots" aria-hidden="true"></div>
+      <div class="footer-bottom">
+        <div class="footer-legal">
+          <a href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">Source</a>
+          <a href="#api" data-transition="API Layer">API</a>
+          <a href="#architecture" data-transition="Architecture">System</a>
+        </div>
+        <div class="footer-social">
+          <strong>Connect:</strong>
+          <a href="https://github.com/YUK1207" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://yuk1207.github.io/token-budget-estimator/" target="_blank" rel="noreferrer">Website</a>
+        </div>
+      </div>
+      <div class="footer-tools">
+        <a class="back-top" href="#top" data-transition="Launch" aria-label="Back to top"></a>
+        <nav class="footer-dock" aria-label="Quick launch dock">
+          <a class="dock-logo" href="#top" data-transition="Launch">tb.</a>
+          <a href="#forecast" data-transition="Forecast">Forecast</a>
+          <a href="#specs" data-transition="Control">Control</a>
+          <a href="#api" data-transition="API Layer">API</a>
+          <a class="dock-visit" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">GitHub</a>
+        </nav>
       </div>
     </div>
   </footer>
 
-  <script type="module">
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+  <script>
+    const root = document.documentElement;
+    const bootMask = document.querySelector("#bootMask");
+    const curtain = document.querySelector("#curtain");
+    const curtainText = document.querySelector("#curtainText");
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const canvas = document.querySelector("#threeScene");
-    const host = canvas?.closest(".cinema-visual");
-    if (canvas && host) {
+    window.addEventListener("load", () => {
+      window.setTimeout(() => bootMask.classList.add("loaded"), 220);
+    });
+
+    document.querySelectorAll("a[href^='#'][data-transition]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        const target = document.querySelector(link.getAttribute("href"));
+        if (!target) return;
+        event.preventDefault();
+        const top = Math.max(0, target.getBoundingClientRect().top + window.pageYOffset - 70);
+        if (reduced) {
+          window.scrollTo({ top });
+          return;
+        }
+        curtainText.textContent = link.dataset.transition || "Launch";
+        curtain.classList.remove("leaving");
+        curtain.classList.add("active");
+        window.setTimeout(() => {
+          window.scrollTo({ top });
+          curtain.classList.add("leaving");
+          curtain.classList.remove("active");
+        }, 430);
+        window.setTimeout(() => {
+          curtain.classList.remove("leaving");
+        }, 980);
+      });
+    });
+
+    const reveals = Array.from(document.querySelectorAll(".reveal"));
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add("in");
+      });
+    }, { threshold: 0.18 });
+    reveals.forEach((item) => revealObserver.observe(item));
+
+    const chapterData = {
+      forecast: {
+        eyebrow: "Token forecast",
+        title: "Estimate the likely token interval before execution.",
+        copy: "The estimator reports a range, explains why the spread exists, and helps decide whether to run, split, or scope down.",
+        range: "8k to 40k",
+        low: "8k",
+        high: "40k",
+        width: "64%",
+        decision: "Run scoped",
+        note: "Proceed with bounded files and tests first.",
+        scan: "36%"
+      },
+      risk: {
+        eyebrow: "Risk routing",
+        title: "Route uncertain work into safer launch modes.",
+        copy: "Large or ambiguous tasks can move into discovery, staged execution, or user approval before broad changes begin.",
+        range: "Wide band",
+        low: "18k",
+        high: "150k",
+        width: "84%",
+        decision: "Split first",
+        note: "Start with architecture discovery and a smaller patch.",
+        scan: "52%"
+      },
+      contract: {
+        eyebrow: "Budget contract",
+        title: "Turn an estimate into an execution boundary.",
+        copy: "The output defines budget ceiling, stop conditions, required verification, and when to ask before continuing.",
+        range: "Bounded",
+        low: "12k",
+        high: "62k",
+        width: "52%",
+        decision: "Set stop-loss",
+        note: "Pause if the task expands beyond the declared scope.",
+        scan: "24%"
+      },
+      diet: {
+        eyebrow: "Context diet",
+        title: "Load the right context, not the whole universe.",
+        copy: "The page frames context selection as a performance decision: fewer files, better signal, cleaner execution.",
+        range: "Signal first",
+        low: "5k",
+        high: "22k",
+        width: "38%",
+        decision: "Trim context",
+        note: "Prefer graph traces, docs, and target files before broad reads.",
+        scan: "66%"
+      }
+    };
+
+    const chapterButtons = Array.from(document.querySelectorAll(".chapter-button"));
+    const deviceEyebrow = document.querySelector("#deviceEyebrow");
+    const deviceTitle = document.querySelector("#deviceTitle");
+    const deviceCopy = document.querySelector("#deviceCopy");
+    const metricRange = document.querySelector("#metricRange");
+    const metricDecision = document.querySelector("#metricDecision");
+    const metricNote = document.querySelector("#metricNote");
+    const scanLine = document.querySelector("#scanLine");
+    const rangeBand = document.querySelector("#rangeBand");
+    const rangeLow = document.querySelector("#rangeLow");
+    const rangeHigh = document.querySelector("#rangeHigh");
+
+    function setChapter(mode) {
+      const data = chapterData[mode] || chapterData.forecast;
+      chapterButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+      deviceEyebrow.textContent = data.eyebrow;
+      deviceTitle.textContent = data.title;
+      deviceCopy.textContent = data.copy;
+      metricRange.textContent = data.range;
+      metricDecision.textContent = data.decision;
+      metricNote.textContent = data.note;
+      scanLine.style.setProperty("--scan", data.scan);
+      rangeBand.style.setProperty("--range-width", data.width);
+      rangeLow.textContent = data.low;
+      rangeHigh.textContent = data.high;
+    }
+
+    chapterButtons.forEach((button) => {
+      button.addEventListener("click", () => setChapter(button.dataset.mode));
+    });
+
+    const codeLines = Array.from(document.querySelectorAll(".code-window .line"));
+    if (codeLines.length && !reduced) {
+      let activeLine = 0;
+      window.setInterval(() => {
+        codeLines.forEach((line, index) => line.classList.toggle("active", index === activeLine));
+        activeLine = (activeLine + 1) % codeLines.length;
+      }, 950);
+    }
+  </script>
+
+  <script type="module">
+    const canvas = document.querySelector("#engineCanvas");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function drawFallback() {
+      const ctx = canvas.getContext("2d");
+      let raf = 0;
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.floor(canvas.clientWidth * dpr);
+        canvas.height = Math.floor(canvas.clientHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      function frame(time) {
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#050606";
+        ctx.fillRect(0, 0, w, h);
+        const cx = w * 0.68;
+        const cy = h * 0.47;
+        const size = Math.min(w, h) * 0.36;
+        const pulse = reduce ? 0 : Math.sin(time * 0.0014) * 10;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(-0.42 + Math.sin(time * 0.00045) * 0.04);
+        ctx.strokeStyle = "rgba(184,255,57,0.24)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+          const s = size * (0.44 + i * 0.16) + pulse;
+          ctx.strokeRect(-s / 2, -s / 2, s, s);
+        }
+        ctx.fillStyle = "rgba(184,255,57,0.92)";
+        ctx.fillRect(-size * 0.22, -size * 0.22, size * 0.44, size * 0.44);
+        ctx.strokeStyle = "rgba(244,245,239,0.35)";
+        ctx.strokeRect(-size * 0.32, -size * 0.32, size * 0.64, size * 0.64);
+        ctx.restore();
+        if (!reduce) raf = requestAnimationFrame(frame);
+      }
+      resize();
+      window.addEventListener("resize", resize, { passive: true });
+      frame(0);
+    }
+
+    try {
+      const THREE = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-      camera.position.set(0, 0.4, 8.2);
+      const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0.2, 8.4);
 
       const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
 
       const root = new THREE.Group();
+      root.position.set(1.85, -0.05, 0);
       scene.add(root);
 
-      const accent = new THREE.Color("#d7ff7a");
-      const mint = new THREE.Color("#7dffca");
-      const blue = new THREE.Color("#9bbcff");
+      const accent = new THREE.Color("#b8ff39");
+      const ink = new THREE.Color("#f4f5ef");
 
-      const core = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(1.16, 5),
-        new THREE.MeshPhysicalMaterial({
-          color: "#ecffd0",
-          emissive: "#7dffca",
-          emissiveIntensity: 0.36,
-          roughness: 0.22,
-          metalness: 0.08,
-          transmission: 0.22,
-          thickness: 0.55
-        })
-      );
+      const waferMaterial = new THREE.MeshPhysicalMaterial({
+        color: "#151a14",
+        roughness: 0.38,
+        metalness: 0.72,
+        clearcoat: 0.8,
+        clearcoatRoughness: 0.18
+      });
+
+      const accentMaterial = new THREE.MeshBasicMaterial({
+        color: accent,
+        transparent: true,
+        opacity: 0.9
+      });
+
+      const glassMaterial = new THREE.MeshPhysicalMaterial({
+        color: "#dfff9a",
+        emissive: "#84c720",
+        emissiveIntensity: 0.24,
+        metalness: 0.08,
+        roughness: 0.12,
+        transmission: 0.35,
+        transparent: true,
+        opacity: 0.78
+      });
+
+      const wafer = new THREE.Mesh(new THREE.BoxGeometry(2.95, 0.22, 2.95), waferMaterial);
+      wafer.rotation.set(0.68, 0, -0.68);
+      root.add(wafer);
+
+      const core = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.32, 1.18), glassMaterial);
+      core.rotation.copy(wafer.rotation);
+      core.position.y = 0.24;
       root.add(core);
 
-      const halo = new THREE.Mesh(
-        new THREE.SphereGeometry(1.78, 48, 48),
-        new THREE.MeshBasicMaterial({ color: "#7dffca", transparent: true, opacity: 0.075, blending: THREE.AdditiveBlending })
-      );
-      root.add(halo);
-
-      const ringMaterial = new THREE.MeshBasicMaterial({ color: "#d7ff7a", transparent: true, opacity: 0.22 });
-      const rings = [
-        [2.55, 0.006, 0.5, 0.1, 0.1],
-        [3.12, 0.005, 1.15, 0.35, 0.7],
-        [3.78, 0.004, 1.35, -0.2, -0.42]
-      ].map(([radius, tube, x, y, z]) => {
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 16, 180), ringMaterial.clone());
-        ring.rotation.set(x, y, z);
+      const edgeMaterial = new THREE.LineBasicMaterial({ color: accent, transparent: true, opacity: 0.34 });
+      for (let i = 0; i < 4; i++) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(1.65 + i * 0.38, 0.006, 8, 128),
+          accentMaterial.clone()
+        );
+        ring.material.opacity = 0.22 - i * 0.028;
+        ring.rotation.set(1.22, 0, -0.68 + i * 0.1);
         root.add(ring);
-        return ring;
-      });
+      }
 
-      const moduleData = [
-        ["Forecast", accent, new THREE.Vector3(-2.8, 1.3, 0.55)],
-        ["ROI", mint, new THREE.Vector3(2.78, 1.02, -0.1)],
-        ["Contract", blue, new THREE.Vector3(2.25, -1.6, 0.45)],
-        ["Diet", accent, new THREE.Vector3(-2.5, -1.42, -0.25)]
-      ];
-
-      const nodes = moduleData.map(([label, color, base]) => {
-        const group = new THREE.Group();
-        group.userData.base = base;
-        const shell = new THREE.Mesh(
-          new THREE.SphereGeometry(0.22, 24, 24),
-          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.88 })
-        );
-        const glow = new THREE.Mesh(
-          new THREE.SphereGeometry(0.48, 24, 24),
-          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending })
-        );
-        group.add(glow, shell);
-
-        const spriteCanvas = document.createElement("canvas");
-        spriteCanvas.width = 320;
-        spriteCanvas.height = 96;
-        const ctx = spriteCanvas.getContext("2d");
-        ctx.fillStyle = "rgba(5,5,6,0.72)";
-        ctx.strokeStyle = "rgba(246,244,238,0.18)";
-        ctx.lineWidth = 2;
-        if (ctx.roundRect) {
-          ctx.roundRect(2, 2, 316, 92, 26);
-        } else {
-          ctx.rect(2, 2, 316, 92);
+      const pins = new THREE.Group();
+      const pinMaterial = new THREE.MeshBasicMaterial({ color: ink, transparent: true, opacity: 0.48 });
+      for (let x = -5; x <= 5; x++) {
+        for (let z = -5; z <= 5; z++) {
+          if (Math.abs(x) < 2 && Math.abs(z) < 2) continue;
+          if ((x + z) % 2 !== 0) continue;
+          const pin = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.16, 0.045), pinMaterial);
+          pin.position.set(x * 0.24, -0.12, z * 0.24);
+          pins.add(pin);
         }
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#f6f4ee";
-        ctx.font = "700 30px JetBrains Mono, monospace";
-        ctx.fillText(label, 28, 58);
-        const texture = new THREE.CanvasTexture(spriteCanvas);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.86 }));
-        sprite.scale.set(1.6, 0.48, 1);
-        sprite.position.set(0.92, 0.08, 0);
-        group.add(sprite);
-
-        root.add(group);
-        return group;
-      });
-
-      const lineMaterial = new THREE.LineBasicMaterial({ color: "#d7ff7a", transparent: true, opacity: 0.16 });
-      const lines = nodes.map((node) => {
-        const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), node.userData.base.clone()]);
-        const line = new THREE.Line(geometry, lineMaterial.clone());
-        root.add(line);
-        return line;
-      });
+      }
+      pins.rotation.copy(wafer.rotation);
+      root.add(pins);
 
       const particleGeometry = new THREE.BufferGeometry();
-      const particleCount = 260;
-      const positions = new Float32Array(particleCount * 3);
-      for (let i = 0; i < particleCount; i++) {
-        const angle = i * 0.19;
-        const radius = 1.8 + (i % 40) * 0.044;
+      const count = 420;
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const angle = i * 0.34;
+        const radius = 2.4 + (i % 60) * 0.035;
         positions[i * 3] = Math.cos(angle) * radius;
-        positions[i * 3 + 1] = (Math.sin(i * 0.37) * 0.75);
-        positions[i * 3 + 2] = Math.sin(angle) * radius * 0.36;
+        positions[i * 3 + 1] = Math.sin(i * 0.27) * 0.72;
+        positions[i * 3 + 2] = Math.sin(angle) * radius * 0.52;
       }
       particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
       const particles = new THREE.Points(
         particleGeometry,
-        new THREE.PointsMaterial({ color: "#d7ff7a", size: 0.018, transparent: true, opacity: 0.36, blending: THREE.AdditiveBlending })
+        new THREE.PointsMaterial({ color: accent, size: 0.018, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending })
       );
       root.add(particles);
 
-      const light = new THREE.PointLight("#eaffb6", 18, 22);
-      light.position.set(0, 2.2, 4);
+      const light = new THREE.PointLight("#ddff9a", 18, 18);
+      light.position.set(1, 2.8, 4);
       scene.add(light);
-      scene.add(new THREE.AmbientLight("#9bbcff", 0.9));
-
-      const pointer = { x: 0, y: 0 };
-      const scroll = { value: 0 };
+      scene.add(new THREE.AmbientLight("#9aa48f", 1.35));
 
       function resize() {
-        const rect = host.getBoundingClientRect();
-        const width = Math.max(320, rect.width);
-        const height = Math.max(420, rect.height);
+        const width = Math.max(320, canvas.clientWidth);
+        const height = Math.max(360, canvas.clientHeight);
         renderer.setSize(width, height, false);
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
       }
 
-      function updateScrollFactor() {
-        const rect = host.getBoundingClientRect();
-        const middle = window.innerHeight * 0.5;
-        const distance = Math.abs(rect.top + rect.height * 0.5 - middle);
-        scroll.value = 1 - Math.min(1, distance / (window.innerHeight * 0.9));
-      }
-
+      const pointer = { x: 0, y: 0 };
       window.addEventListener("resize", resize, { passive: true });
-      window.addEventListener("scroll", updateScrollFactor, { passive: true });
       window.addEventListener("pointermove", (event) => {
         pointer.x = (event.clientX / window.innerWidth - 0.5) * 2;
         pointer.y = (event.clientY / window.innerHeight - 0.5) * 2;
       }, { passive: true });
 
       resize();
-      updateScrollFactor();
 
       function animate(time) {
         const t = time * 0.001;
-        const spread = 0.72 + scroll.value * 0.42;
-        root.rotation.y += ((pointer.x * 0.16) - root.rotation.y) * 0.025;
-        root.rotation.x += ((-pointer.y * 0.08) - root.rotation.x) * 0.025;
-        core.rotation.y = t * 0.32;
-        core.rotation.x = Math.sin(t * 0.7) * 0.1;
-        halo.scale.setScalar(1 + Math.sin(t * 1.6) * 0.045);
-        particles.rotation.y = t * 0.08;
-
-        rings.forEach((ring, index) => {
-          ring.rotation.z += 0.0026 + index * 0.0008;
-          ring.material.opacity = 0.13 + Math.sin(t + index) * 0.025 + scroll.value * 0.08;
-        });
-
-        nodes.forEach((node, index) => {
-          const base = node.userData.base;
-          node.position.lerp(base.clone().multiplyScalar(spread), 0.08);
-          node.children[0].scale.setScalar(1 + Math.sin(t * 1.8 + index) * 0.08);
-          const line = lines[index];
-          line.geometry.setFromPoints([new THREE.Vector3(), node.position.clone()]);
-          line.material.opacity = 0.1 + scroll.value * 0.18;
-        });
-
+        if (!reduce) {
+          root.rotation.y += (pointer.x * 0.13 - root.rotation.y) * 0.025;
+          root.rotation.x += (-pointer.y * 0.08 - root.rotation.x) * 0.025;
+          wafer.rotation.z = -0.68 + Math.sin(t * 0.6) * 0.025;
+          core.position.y = 0.24 + Math.sin(t * 1.4) * 0.035;
+          particles.rotation.y = t * 0.08;
+          particles.rotation.z = Math.sin(t * 0.3) * 0.06;
+        }
         renderer.render(scene, camera);
         requestAnimationFrame(animate);
       }
-      requestAnimationFrame(animate);
+
+      animate(0);
+    } catch (error) {
+      drawFallback();
     }
-  </script>
-
-  <script>
-    const progress = document.querySelector(".progress");
-    const chapters = Array.from(document.querySelectorAll(".chapter"));
-    const revealItems = Array.from(document.querySelectorAll(".feature"));
-    const parallaxItems = Array.from(document.querySelectorAll("[data-depth]"));
-    const rangeText = document.querySelector("#rangeText");
-    const riskText = document.querySelector("#riskText");
-    const roiText = document.querySelector("#roiText");
-    const contractText = document.querySelector("#contractText");
-    const dietText = document.querySelector("#dietText");
-    const confidenceText = document.querySelector("#confidenceText");
-    const deviceMode = document.querySelector("#deviceMode");
-    const meterBar = document.querySelector("#meterBar");
-    const traceA = document.querySelector("#traceA");
-    const traceB = document.querySelector("#traceB");
-    const traceC = document.querySelector("#traceC");
-
-    const deviceStates = [
-      { mode: "PREFLIGHT / TOKEN FORECAST", diet: "tests first", confidence: "calibrating", trace: ["8k", "16k", "40k"] },
-      { mode: "PREFLIGHT / ROI ROUTING", diet: "split scope", confidence: "volatile", trace: ["18k", "72k", "150k"] },
-      { mode: "PREFLIGHT / BUDGET CONTRACT", diet: "bounded run", confidence: "controlled", trace: ["12k", "38k", "62k"] },
-      { mode: "PREFLIGHT / CONTEXT DIET", diet: "signal first", confidence: "focused", trace: ["5k", "11k", "22k"] }
-    ];
-
-    function setChapter(chapter) {
-      const step = Number(chapter.dataset.step || 0);
-      chapters.forEach((item) => item.classList.toggle("active", item === chapter));
-      const state = deviceStates[step] || deviceStates[0];
-      rangeText.textContent = chapter.dataset.range;
-      riskText.textContent = `${chapter.dataset.risk} risk`;
-      roiText.textContent = chapter.dataset.roi;
-      contractText.textContent = chapter.dataset.contract;
-      dietText.textContent = state.diet;
-      confidenceText.textContent = state.confidence;
-      deviceMode.textContent = state.mode;
-      meterBar.style.setProperty("--meter", `${chapter.dataset.meter}%`);
-      traceA.textContent = state.trace[0];
-      traceB.textContent = state.trace[1];
-      traceC.textContent = state.trace[2];
-    }
-
-    const chapterObserver = new IntersectionObserver((entries) => {
-      entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
-        .slice(0, 1)
-        .forEach((entry) => setChapter(entry.target));
-    }, { threshold: [0.42, 0.58, 0.72] });
-
-    chapters.forEach((chapter) => chapterObserver.observe(chapter));
-
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) entry.target.classList.add("revealed");
-      });
-    }, { threshold: 0.24 });
-
-    revealItems.forEach((item) => revealObserver.observe(item));
-
-    const countTargets = Array.from(document.querySelectorAll("[data-count]"));
-    const countObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting || entry.target.dataset.done) return;
-        entry.target.dataset.done = "true";
-        const target = Number(entry.target.dataset.count || 0);
-        const start = performance.now();
-        const run = (now) => {
-          const t = Math.min(1, (now - start) / 900);
-          const eased = 1 - Math.pow(1 - t, 3);
-          entry.target.textContent = Math.round(target * eased);
-          if (t < 1) requestAnimationFrame(run);
-        };
-        requestAnimationFrame(run);
-      });
-    }, { threshold: 0.7 });
-
-    countTargets.forEach((item) => countObserver.observe(item));
-
-    function updateProgress() {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      const pct = max > 0 ? (window.scrollY / max) * 100 : 0;
-      progress.style.setProperty("--progress", `${pct}%`);
-    }
-
-    function moveParallax(event) {
-      const x = (event.clientX / window.innerWidth - 0.5) * 2;
-      const y = (event.clientY / window.innerHeight - 0.5) * 2;
-      parallaxItems.forEach((item) => {
-        const depth = Number(item.dataset.depth || 0);
-        item.style.transform = `translate3d(${x * depth * 24}px, ${y * depth * 18}px, 0)`;
-      });
-    }
-
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.addEventListener("scroll", updateProgress, { passive: true });
-    if (!reducedMotion) window.addEventListener("pointermove", moveParallax, { passive: true });
-    updateProgress();
-    setChapter(chapters[0]);
   </script>
 </body>
 </html>
