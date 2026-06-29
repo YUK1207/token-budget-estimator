@@ -30,6 +30,7 @@
       --code: "IBM Plex Mono", "Consolas", monospace;
       --ease: cubic-bezier(.16, 1, .3, 1);
       --max: 1440px;
+      --desktop-scale: 0.75;
     }
 
     * {
@@ -52,6 +53,12 @@
       font-family: var(--body);
       font-weight: 400;
       overflow-x: hidden;
+    }
+
+    @media (min-width: 900px) {
+      body {
+        zoom: var(--desktop-scale);
+      }
     }
 
     strong,

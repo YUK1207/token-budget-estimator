@@ -30,7 +30,7 @@ This repository includes a product home page at `site/index.html`.
 
 ![Token Budget Estimator home page](assets/homepage.png)
 
-官网：[https://yuk1207.github.io/token-budget-estimator/](https://yuk1207.github.io/token-budget-estimator/)
+Official Website: [https://yuk1207.github.io/token-budget-estimator/](https://yuk1207.github.io/token-budget-estimator/)
 
 Use it as the GitHub Pages entry point and public project home page. It introduces the skill's forecast, ROI, budget contract, and context diet workflow without requiring a backend.
 
