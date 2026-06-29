@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Token Budget Estimator API</title>
+  <meta name="description" content="API standard and pricing concept for Token Budget Estimator.">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Playwrite+US+Modern:wght@100..400&display=swap");
+
+    :root {
+      color-scheme: dark;
+      --bg: #050606;
+      --ink: #f4f5ef;
+      --muted: #969a92;
+      --soft: #c8cbc2;
+      --line: rgba(244, 245, 239, 0.14);
+      --line-strong: rgba(244, 245, 239, 0.26);
+      --panel: rgba(16, 18, 17, 0.72);
+      --accent: #b8ff39;
+      --accent-2: #e3ffb0;
+      --radius: 18px;
+      --display: "Playwrite US Modern", "Segoe Script", cursive;
+      --body: "Playwrite US Modern", "Segoe Script", cursive;
+      --code: "IBM Plex Mono", "Consolas", monospace;
+      --ease: cubic-bezier(.16, 1, .3, 1);
+      --max: 1440px;
+      --desktop-scale: 0.75;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: auto;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(184, 255, 57, 0.05), transparent 32rem),
+        radial-gradient(circle at 74% 14%, rgba(184, 255, 57, 0.14), transparent 25rem),
+        var(--bg);
+      font-family: var(--body);
+      font-weight: 400;
+      overflow-x: hidden;
+    }
+
+    @media (min-width: 900px) {
+      body {
+        zoom: var(--desktop-scale);
+      }
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px);
+      background-size: 84px 84px;
+      mask-image: linear-gradient(to bottom, black, transparent 74%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 54% 18%, transparent, rgba(5, 6, 6, 0.58) 42rem),
+        linear-gradient(180deg, transparent 0%, #050606 88%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    strong,
+    b {
+      font-weight: 400;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .wrap {
+      width: min(var(--max), calc(100% - 44px));
+      margin: 0 auto;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: 72px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(5, 6, 6, 0.74);
+      backdrop-filter: blur(22px);
+    }
+
+    .nav-inner {
+      width: min(var(--max), calc(100% - 44px));
+      height: 100%;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto minmax(180px, 1fr);
+      align-items: center;
+      gap: 18px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      width: fit-content;
+    }
+
+    .brand-mark {
+      min-width: 44px;
+      height: 42px;
+      display: inline-grid;
+      place-items: center;
+      color: var(--ink);
+      font-family: var(--display);
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .brand-copy strong,
+    .brand-copy span {
+      display: block;
+      white-space: nowrap;
+    }
+
+    .brand-copy strong {
+      font-size: 13px;
+    }
+
+    .brand-copy span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .nav-links {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .nav-link,
+    .button {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      transition: transform 180ms var(--ease), background 180ms var(--ease), color 180ms var(--ease), border-color 180ms var(--ease);
+    }
+
+    .nav-link {
+      padding: 0 14px;
+      color: var(--soft);
+      font-size: 12px;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.08);
+      outline: none;
+    }
+
+    .nav-action {
+      justify-self: end;
+    }
+
+    .button {
+      border: 1px solid transparent;
+      min-height: 48px;
+      padding: 0 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .button.primary {
+      color: #101407;
+      background: var(--accent);
+      border-color: rgba(184, 255, 57, 0.74);
+    }
+
+    .button.secondary {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--line);
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      background: var(--accent-2);
+    }
+
+    .button.secondary:hover,
+    .button.secondary:focus-visible {
+      background: rgba(255, 255, 255, 0.11);
+      border-color: var(--line-strong);
+    }
+
+    .hero {
+      position: relative;
+      min-height: calc(100dvh - 72px);
+      display: grid;
+      align-items: center;
+      padding: 96px 0 68px;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      right: 5vw;
+      top: 11vh;
+      width: min(560px, 44vw);
+      aspect-ratio: 1;
+      border: 1px solid rgba(184, 255, 57, 0.2);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.34), transparent 18%),
+        linear-gradient(135deg, rgba(244, 245, 239, 0.17), rgba(184, 255, 57, 0.05)),
+        rgba(5, 6, 6, 0.3);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        0 0 90px rgba(184, 255, 57, 0.14);
+      opacity: 0.8;
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(340px, 0.7fr);
+      gap: clamp(34px, 6vw, 96px);
+      align-items: end;
+    }
+
+    .hero-grid > *,
+    .two-col > *,
+    .endpoint-grid > *,
+    .flow-grid > *,
+    .plan-grid > * {
+      min-width: 0;
+    }
+
+    .kicker,
+    .micro-label {
+      color: var(--accent);
+      font-family: var(--body);
+      font-size: 12px;
+    }
+
+    .kicker {
+      width: fit-content;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .kicker::before {
+      content: "";
+      width: 42px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    h1 {
+      max-width: 980px;
+      font-family: var(--display);
+      font-size: clamp(64px, 10vw, 156px);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .hero-copy,
+    .section-lead,
+    .panel p,
+    .endpoint-card p,
+    .step p,
+    .plan li,
+    .footer p {
+      color: var(--soft);
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+
+    .hero-copy {
+      max-width: 640px;
+      margin-top: 30px;
+      font-size: clamp(18px, 1.65vw, 23px);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .hero-card,
+    .panel,
+    .endpoint-card,
+    .plan,
+    .step {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.018)),
+        rgba(16, 18, 17, 0.72);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 28px 100px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-card {
+      padding: 28px;
+    }
+
+    .readout {
+      display: grid;
+      gap: 18px;
+    }
+
+    .readout strong {
+      display: block;
+      margin-top: 10px;
+      font-family: var(--display);
+      font-size: clamp(34px, 4.4vw, 64px);
+      line-height: 1.08;
+    }
+
+    .readout small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .section {
+      padding: 110px 0;
+    }
+
+    .section-title {
+      max-width: 1050px;
+      font-family: var(--display);
+      font-size: clamp(48px, 7.2vw, 112px);
+      font-weight: 400;
+      line-height: 1.08;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .section-lead {
+      max-width: 760px;
+      margin-top: 22px;
+      font-size: clamp(17px, 1.4vw, 22px);
+    }
+
+    .endpoint-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 54px;
+    }
+
+    .endpoint-card {
+      min-height: 270px;
+      display: grid;
+      align-content: space-between;
+      gap: 26px;
+      padding: 24px;
+    }
+
+    .endpoint-card code,
+    .code-window code,
+    .method {
+      font-family: var(--code);
+    }
+
+    .method {
+      display: block;
+      color: var(--accent);
+      font-size: 12px;
+      word-break: break-word;
+    }
+
+    .endpoint-card h3 {
+      margin-top: 18px;
+      font-family: var(--display);
+      font-size: clamp(26px, 2.8vw, 44px);
+      font-weight: 400;
+      line-height: 1.1;
+    }
+
+    .endpoint-card p {
+      font-size: 14px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+      gap: 22px;
+      align-items: stretch;
+      margin-top: 54px;
+    }
+
+    .panel {
+      padding: clamp(24px, 4vw, 44px);
+    }
+
+    .panel h3 {
+      margin-top: 20px;
+      font-family: var(--display);
+      font-size: clamp(34px, 4vw, 64px);
+      font-weight: 400;
+      line-height: 1.1;
+    }
+
+    .panel p {
+      margin-top: 18px;
+      font-size: 15px;
+    }
+
+    .api-lines {
+      display: grid;
+      gap: 14px;
+      margin-top: 34px;
+    }
+
+    .api-line {
+      display: grid;
+      grid-template-columns: minmax(180px, 0.55fr) 1fr;
+      gap: 18px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    .api-line b {
+      color: var(--accent);
+      font-family: var(--code);
+      font-size: 12px;
+      font-weight: 400;
+      word-break: break-word;
+    }
+
+    .api-line span {
+      color: var(--soft);
+      line-height: 1.5;
+    }
+
+    .code-window {
+      position: relative;
+      min-width: 0;
+      margin-top: 28px;
+      border: 1px solid rgba(184, 255, 57, 0.22);
+      border-radius: calc(var(--radius) - 2px);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(184, 255, 57, 0.1), transparent 16rem),
+        rgba(2, 3, 3, 0.58);
+    }
+
+    .code-window::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(110deg, transparent 0%, rgba(184, 255, 57, 0.14) 48%, transparent 64%);
+      transform: translateX(-120%);
+      animation: codeSweep 5.8s var(--ease) infinite;
+    }
+
+    .code-window pre {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      padding: 22px;
+      color: var(--soft);
+      font-family: var(--code);
+      font-size: 12px;
+      line-height: 1.75;
+      overflow: auto;
+    }
+
+    .code-window .green {
+      color: var(--accent);
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 54px;
+      counter-reset: flowStep;
+    }
+
+    .step {
+      min-height: 280px;
+      display: grid;
+      align-content: space-between;
+      padding: 24px;
+    }
+
+    .step::before {
+      counter-increment: flowStep;
+      content: counter(flowStep, decimal-leading-zero);
+      display: inline-grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid rgba(184, 255, 57, 0.24);
+      border-radius: 999px;
+      color: var(--accent);
+      background: rgba(184, 255, 57, 0.06);
+      font-family: var(--code);
+      font-size: 12px;
+    }
+
+    .step h3 {
+      margin-top: 28px;
+      font-family: var(--display);
+      font-size: clamp(28px, 3vw, 48px);
+      font-weight: 400;
+      line-height: 1.1;
+    }
+
+    .step p {
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    .plan-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 54px;
+    }
+
+    .plan {
+      min-height: 350px;
+      display: grid;
+      align-content: space-between;
+      gap: 26px;
+      padding: clamp(22px, 3vw, 34px);
+    }
+
+    .price {
+      display: block;
+      margin-top: 18px;
+      color: var(--accent);
+      font-family: var(--display);
+      font-size: clamp(34px, 4.5vw, 64px);
+      line-height: 1;
+    }
+
+    .plan ul {
+      display: grid;
+      gap: 11px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .plan li {
+      display: grid;
+      grid-template-columns: 9px 1fr;
+      gap: 10px;
+      align-items: start;
+      font-size: 14px;
+    }
+
+    .plan li::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      margin-top: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 18px rgba(184, 255, 57, 0.42);
+    }
+
+    .footer {
+      border-top: 1px solid var(--line);
+      padding: 42px 0 54px;
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .footer p {
+      font-size: 14px;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    @keyframes codeSweep {
+      42%, 100% {
+        transform: translateX(120%);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .nav-inner {
+        grid-template-columns: 1fr auto;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero-grid,
+      .two-col,
+      .endpoint-grid,
+      .flow-grid,
+      .plan-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero::before {
+        right: -12vw;
+        top: 24vh;
+        width: 420px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .wrap,
+      .nav-inner {
+        width: min(100% - 28px, var(--max));
+      }
+
+      .brand-copy span,
+      .nav-action {
+        display: none;
+      }
+
+      .hero {
+        min-height: auto;
+        padding: 86px 0 52px;
+      }
+
+      h1 {
+        font-size: clamp(52px, 15vw, 74px);
+      }
+
+      .section {
+        padding: 74px 0;
+      }
+
+      .api-line {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .code-window pre {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">tb.</span>
+        <span class="brand-copy">
+          <strong>Token Budget Estimator</strong>
+          <span>Preflight API standard</span>
+        </span>
+      </a>
+      <div class="nav-links" aria-label="API page sections">
+        <a class="nav-link" href="#standard">Standard</a>
+        <a class="nav-link" href="#examples">Examples</a>
+        <a class="nav-link" href="#plans">Plans</a>
+        <a class="nav-link" href="#flow">Use</a>
+      </div>
+      <div class="nav-action">
+        <a class="button primary" href="index.html">Home</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero wrap">
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Commercial API layer</div>
+          <h1>Preflight API for agent platforms.</h1>
+          <p class="hero-copy">A standard for forecasting spend, evaluating budget policy, and generating execution contracts before a coding agent starts work.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#examples">View example</a>
+            <a class="button secondary" href="#plans">See plans</a>
+          </div>
+        </div>
+        <aside class="hero-card readout" aria-label="API positioning">
+          <div>
+            <span class="micro-label">API role</span>
+            <strong>Decision gate</strong>
+            <small>Not a model billing meter. It controls whether an agent run should start, split, pause, or ask for approval.</small>
+          </div>
+          <div>
+            <span class="micro-label">Primary buyers</span>
+            <strong>Teams and platforms</strong>
+            <small>CI systems, internal developer tools, agent platforms, and enterprise engineering organizations.</small>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section wrap" id="standard">
+      <h2 class="section-title">The API standard is small on purpose.</h2>
+      <p class="section-lead">Five endpoints cover the paid surface: forecast the run, compare work queues, evaluate team policy, generate contracts, and calibrate with real outcomes.</p>
+
+      <div class="endpoint-grid" aria-label="Endpoint standard">
+        <article class="endpoint-card">
+          <div>
+            <span class="method">POST /v1/forecast</span>
+            <h3>Forecast</h3>
+          </div>
+          <p>Estimate token range, cost range, risk level, and context fit for one agent task.</p>
+        </article>
+        <article class="endpoint-card">
+          <div>
+            <span class="method">POST /v1/batch-forecast</span>
+            <h3>Batch</h3>
+          </div>
+          <p>Compare multiple planned tasks before a shared team budget is spent.</p>
+        </article>
+        <article class="endpoint-card">
+          <div>
+            <span class="method">POST /v1/policy/evaluate</span>
+            <h3>Policy</h3>
+          </div>
+          <p>Apply ceilings, approval rules, and split thresholds to a forecast result.</p>
+        </article>
+        <article class="endpoint-card">
+          <div>
+            <span class="method">POST /v1/contracts</span>
+            <h3>Contract</h3>
+          </div>
+          <p>Generate stop-loss limits for files, commands, logs, retries, and approval gates.</p>
+        </article>
+        <article class="endpoint-card">
+          <div>
+            <span class="method">POST /v1/history/calibrate</span>
+            <h3>Calibrate</h3>
+          </div>
+          <p>Feed actual run outcomes back into the estimator to improve future ranges.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section wrap" id="examples">
+      <h2 class="section-title">How a platform calls it.</h2>
+      <p class="section-lead">The API should feel predictable to developers: send a task, repo profile, budget ceiling, and price assumptions. Receive a decision and a bounded run contract.</p>
+
+      <div class="two-col">
+        <article class="panel">
+          <span class="micro-label">Request</span>
+          <h3>Forecast before execution.</h3>
+          <p>Use this when an internal tool, CI job, or agent platform wants to decide whether a task should run now.</p>
+          <div class="code-window" aria-label="Example forecast request">
+            <pre>{
+  <span class="green">"task"</span>: "Fix failing tests in authentication",
+  <span class="green">"repo_profile"</span>: {
+    <span class="green">"language"</span>: "typescript",
+    <span class="green">"file_count"</span>: 420,
+    <span class="green">"test_framework"</span>: "vitest"
+  },
+  <span class="green">"budget"</span>: {
+    <span class="green">"max_tokens"</span>: 50000,
+    <span class="green">"currency"</span>: "USD",
+    <span class="green">"input_price_per_million"</span>: 1.25,
+    <span class="green">"output_price_per_million"</span>: 10
+  },
+  <span class="green">"options"</span>: {
+    <span class="green">"include_contract"</span>: true,
+    <span class="green">"include_context_plan"</span>: true
+  }
+}</pre>
+          </div>
+        </article>
+        <article class="panel">
+          <span class="micro-label">Response</span>
+          <h3>Return a decision, not just a number.</h3>
+          <p>The response gives the caller a usable action: run, split, block, or ask for approval.</p>
+          <div class="code-window" aria-label="Example forecast response">
+            <pre>{
+  <span class="green">"forecast"</span>: {
+    <span class="green">"token_range"</span>: { "low": 8000, "high": 40000 },
+    <span class="green">"cost_range"</span>: { "low": 0.08, "high": 0.45 },
+    <span class="green">"risk"</span>: "medium",
+    <span class="green">"context_fit"</span>: "fits"
+  },
+  <span class="green">"recommendation"</span>: {
+    <span class="green">"action"</span>: "run_with_budget_contract",
+    <span class="green">"reason"</span>: "Task is bounded but may need test log inspection."
+  },
+  <span class="green">"contract"</span>: {
+    <span class="green">"mode"</span>: "bounded_run",
+    <span class="green">"max_files_to_read"</span>: 20,
+    <span class="green">"max_commands"</span>: 8,
+    <span class="green">"stop_at"</span>: "budget_ceiling"
+  }
+}</pre>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section wrap">
+      <h2 class="section-title">Policy is where the product becomes valuable.</h2>
+      <p class="section-lead">Teams do not only need a forecast. They need a repeatable rule for what happens when the forecast is too large, too risky, or outside the approved budget.</p>
+
+      <div class="two-col">
+        <article class="panel">
+          <span class="micro-label">Policy rule</span>
+          <div class="api-lines">
+            <div class="api-line"><b>allow</b><span>Forecast is below the team ceiling and risk stays acceptable.</span></div>
+            <div class="api-line"><b>split</b><span>Forecast is too wide, so the task should become discovery first or staged work.</span></div>
+            <div class="api-line"><b>approve</b><span>Forecast exceeds the no-approval threshold or hits a high-risk category.</span></div>
+            <div class="api-line"><b>block</b><span>Forecast exceeds the hard budget ceiling or violates a team policy.</span></div>
+          </div>
+        </article>
+        <article class="panel">
+          <span class="micro-label">Policy response</span>
+          <div class="code-window" aria-label="Policy response">
+            <pre>{
+  <span class="green">"decision"</span>: "requires_approval",
+  <span class="green">"reasons"</span>: [
+    "Forecast exceeds 50k token approval threshold",
+    "Risk level is high"
+  ],
+  <span class="green">"suggested_next_step"</span>: "split_task"
+}</pre>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section wrap" id="plans">
+      <h2 class="section-title">Charge for control, not raw tokens.</h2>
+      <p class="section-lead">The product should not price like a model provider. It should charge for forecast requests, policy evaluations, calibration records, team governance, and enterprise deployment.</p>
+
+      <div class="plan-grid" aria-label="API pricing plan concepts">
+        <article class="plan">
+          <div>
+            <span class="micro-label">Open source</span>
+            <strong class="price">Free</strong>
+          </div>
+          <ul>
+            <li>Local Skill and CLI</li>
+            <li>Basic forecast output</li>
+            <li>Manual model price assumptions</li>
+          </ul>
+        </article>
+        <article class="plan">
+          <div>
+            <span class="micro-label">Developer API</span>
+            <strong class="price">$19/mo</strong>
+          </div>
+          <ul>
+            <li>10k forecast requests each month</li>
+            <li>Forecast, policy, and contract endpoints</li>
+            <li>API keys for tools, scripts, and CI gates</li>
+          </ul>
+        </article>
+        <article class="plan">
+          <div>
+            <span class="micro-label">Team API</span>
+            <strong class="price">$99/mo</strong>
+          </div>
+          <ul>
+            <li>100k forecast requests each month</li>
+            <li>Batch forecast and shared team policies</li>
+            <li>History calibration and usage reports</li>
+          </ul>
+        </article>
+        <article class="plan">
+          <div>
+            <span class="micro-label">Enterprise</span>
+            <strong class="price">Custom</strong>
+          </div>
+          <ul>
+            <li>Private deployment</li>
+            <li>Audit logs, SSO, and security policy</li>
+            <li>CI and internal platform integration</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section wrap" id="flow">
+      <h2 class="section-title">How teams adopt it.</h2>
+      <p class="section-lead">A clean API story should explain the operating loop: create a key, forecast before execution, enforce policy, and calibrate after the run.</p>
+
+      <div class="flow-grid">
+        <article class="step">
+          <div>
+            <h3>Create an API key.</h3>
+            <p>Connect an internal tool, CI job, or agent platform to the preflight layer.</p>
+          </div>
+        </article>
+        <article class="step">
+          <div>
+            <h3>Send the task brief.</h3>
+            <p>Pass the task, repo profile, budget ceiling, model price assumptions, and output options.</p>
+          </div>
+        </article>
+        <article class="step">
+          <div>
+            <h3>Gate the run.</h3>
+            <p>Allow, split, block, or request approval before the agent spends shared budget.</p>
+          </div>
+        </article>
+        <article class="step">
+          <div>
+            <h3>Calibrate later.</h3>
+            <p>Send actual token usage and outcome quality back to improve future forecasts.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p>Token Budget Estimator API standard concept.</p>
+      <div class="footer-links">
+        <a class="button secondary" href="index.html">Home</a>
+        <a class="button primary" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

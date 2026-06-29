@@ -26,13 +26,14 @@ It predicts a token range for the whole task, including prompt text, repository 
 
 ## Home Page
 
-This repository includes a product home page at `site/index.html`.
+This repository includes a product home page at `site/index.html` and an API standard page at `site/api.html`.
 
 ![Token Budget Estimator home page](assets/homepage.png)
 
 Official Website: [https://yuk1207.github.io/token-budget-estimator/](https://yuk1207.github.io/token-budget-estimator/)
+API Standard: [https://yuk1207.github.io/token-budget-estimator/api.html](https://yuk1207.github.io/token-budget-estimator/api.html)
 
-Use it as the GitHub Pages entry point and public project home page. It introduces the skill's forecast, ROI, budget contract, and context diet workflow without requiring a backend.
+Use it as the GitHub Pages entry point and public project home page. It introduces the skill's forecast, ROI, budget contract, context diet workflow, and API preflight control layer without requiring a backend.
 
 ## Installation
 

@@ -985,9 +985,13 @@
     }
 
     .api-module.large {
-      min-height: 520px;
+      min-height: 560px;
       display: grid;
       align-content: space-between;
+    }
+
+    .api-module p + p {
+      margin-top: 14px;
     }
 
     .api-lines {
@@ -998,7 +1002,7 @@
 
     .api-line {
       display: grid;
-      grid-template-columns: 150px 1fr;
+      grid-template-columns: minmax(190px, 0.55fr) 1fr;
       gap: 18px;
       padding: 17px 0;
       border-top: 1px solid rgba(255, 255, 255, 0.09);
@@ -1015,6 +1019,26 @@
     .api-line span {
       color: var(--soft);
       line-height: 1.5;
+    }
+
+    .api-tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .api-tag {
+      display: inline-flex;
+      min-height: 32px;
+      align-items: center;
+      border: 1px solid rgba(184, 255, 57, 0.22);
+      border-radius: 999px;
+      padding: 0 12px;
+      color: var(--accent);
+      background: rgba(184, 255, 57, 0.07);
+      font-family: var(--mono);
+      font-size: 11px;
     }
 
     .api-side {
@@ -1057,6 +1081,99 @@
 
     .code-window .green {
       color: var(--accent);
+    }
+
+    .api-steps {
+      display: grid;
+      gap: 12px;
+      margin-top: 28px;
+      counter-reset: apiStep;
+    }
+
+    .api-step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 16px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.09);
+      color: var(--soft);
+    }
+
+    .api-step::before {
+      counter-increment: apiStep;
+      content: counter(apiStep, decimal-leading-zero);
+      display: inline-grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid rgba(184, 255, 57, 0.24);
+      border-radius: 999px;
+      color: var(--accent);
+      background: rgba(184, 255, 57, 0.06);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .api-step strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+      font-weight: 400;
+    }
+
+    .api-plans {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 22px;
+    }
+
+    .api-plan {
+      min-height: 310px;
+      display: grid;
+      align-content: space-between;
+      gap: 26px;
+      padding: clamp(22px, 3vw, 34px);
+    }
+
+    .api-plan-price {
+      display: block;
+      margin-top: 18px;
+      color: var(--accent);
+      font-family: var(--block);
+      font-size: clamp(36px, 5vw, 64px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .api-plan ul {
+      display: grid;
+      gap: 11px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--soft);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .api-plan li {
+      display: grid;
+      grid-template-columns: 9px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .api-plan li::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      margin-top: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 18px rgba(184, 255, 57, 0.42);
     }
 
     .code-window .line {
@@ -1411,6 +1528,7 @@
       .chapter-layout,
       .chapter-device,
       .api-grid,
+      .api-plans,
       .closing-panel {
         grid-template-columns: 1fr;
       }
@@ -1528,6 +1646,14 @@
         gap: 8px;
       }
 
+      .api-step {
+        grid-template-columns: 1fr;
+      }
+
+      .api-step::before {
+        margin-bottom: 2px;
+      }
+
       .code-window pre {
         font-size: 11px;
       }
@@ -1620,7 +1746,7 @@ runAgent({
         <a class="nav-link" href="#architecture" data-transition="Architecture">Architecture</a>
         <a class="nav-link" href="#forecast" data-transition="Forecast">Forecast</a>
         <a class="nav-link" href="#specs" data-transition="Control">Control</a>
-        <a class="nav-link" href="#api" data-transition="API Layer">API</a>
+        <a class="nav-link" href="api.html">API</a>
       </div>
       <div class="nav-action">
         <a class="nav-cta" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">GitHub</a>
@@ -1799,32 +1925,42 @@ runAgent({
     </section>
 
     <section class="section wrap reveal" id="api">
-      <h2 class="section-title">Reserved for the team layer.</h2>
-      <p class="section-lead">The paid API can be presented as the professional control plane: batch estimates, policy, calibration, and budget contracts.</p>
+      <h2 class="section-title">API deserves its own control room.</h2>
+      <p class="section-lead">The home page stays cinematic. The full API page turns the commercial layer into a standard: endpoints, policy flow, request examples, and plan boundaries.</p>
 
       <div class="api-grid">
         <article class="api-module large">
           <div>
-            <span class="micro-label">API interface</span>
-            <h3 style="margin-top: 20px;">Forecast policy for teams that run agents every day.</h3>
+            <span class="micro-label">Commercial layer</span>
+            <h3 style="margin-top: 20px;">Preflight API for teams that run agents at scale.</h3>
+            <p style="margin-top: 20px;">Forecast spend, evaluate policy, and generate a bounded execution contract before the agent starts reading files, running commands, or expanding scope.</p>
+            <div class="api-tag-row" aria-label="API value tags">
+              <span class="api-tag">Cost forecast</span>
+              <span class="api-tag">Policy gate</span>
+              <span class="api-tag">Budget contract</span>
+              <span class="api-tag">History calibration</span>
+            </div>
           </div>
           <div class="api-lines">
-            <div class="api-line"><b>Batch</b><span>Estimate planned work queues before spending a shared budget.</span></div>
-            <div class="api-line"><b>Policy</b><span>Apply team-level ceilings, stop-loss rules, and approval modes.</span></div>
-            <div class="api-line"><b>History</b><span>Use actual outcomes to calibrate future estimates by task type.</span></div>
+            <div class="api-line"><b>POST /v1/forecast</b><span>Estimate token range, cost range, risk level, and context fit for one task.</span></div>
+            <div class="api-line"><b>POST /v1/policy/evaluate</b><span>Apply team ceilings, approval rules, and split thresholds to a forecast result.</span></div>
+            <div class="api-line"><b>POST /v1/contracts</b><span>Return stop-loss limits for files, commands, logs, retries, and approval gates.</span></div>
           </div>
         </article>
         <div class="api-side">
           <article class="api-module">
-            <span class="micro-label">Contract output</span>
-            <div class="code-window" aria-label="Example budget contract">
-              <pre><span class="line active">{</span><span class="line">  <span class="green">"mode"</span>: "bounded_run",</span><span class="line">  <span class="green">"range"</span>: "8k to 40k",</span><span class="line">  <span class="green">"risk"</span>: "medium",</span><span class="line">  <span class="green">"first_pass"</span>: "tests_and_routes",</span><span class="line">  <span class="green">"stop_at"</span>: "budget_ceiling"</span><span class="line">}</span></pre>
+            <span class="micro-label">API page preview</span>
+            <div class="code-window" aria-label="Example API response">
+              <pre><span class="line active">curl https://api.tokenbudget.dev/v1/forecast</span><span class="line">  -H "Authorization: Bearer $TOKEN"</span><span class="line">  -d '{</span><span class="line">    <span class="green">"task"</span>: "fix failing tests",</span><span class="line">    <span class="green">"budget"</span>: { "max_tokens": 50000 },</span><span class="line">    <span class="green">"include_contract"</span>: true</span><span class="line">  }'</span></pre>
             </div>
           </article>
           <article class="api-module">
-            <span class="micro-label">Launch narrative</span>
-            <h3 style="margin-top: 20px;">A product story with real surfaces.</h3>
-            <p style="margin-top: 18px;">The redesign keeps the cinematic feeling, but the screenshots become real controls, contract examples, and planning outputs.</p>
+            <span class="micro-label">Dedicated page</span>
+            <h3 style="margin-top: 20px;">Keep the launch page clean. Put the standard where builders can read it.</h3>
+            <p style="margin-top: 18px;">The separate API page covers endpoints, example payloads, policy decisions, pricing plans, and integration flow.</p>
+            <div class="hero-actions">
+              <a class="button primary" href="api.html">Open API page</a>
+            </div>
           </article>
         </div>
       </div>
@@ -1856,7 +1992,7 @@ runAgent({
         </div>
         <div class="footer-col">
           <h3>Build</h3>
-          <a href="#api" data-transition="API Layer">API layer</a>
+          <a href="api.html">API layer</a>
           <a href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">Repository</a>
           <a href="#top" data-transition="Launch">Launch surface</a>
         </div>
@@ -1864,7 +2000,7 @@ runAgent({
           <h3>Output</h3>
           <a href="#forecast" data-transition="Forecast">Budget range</a>
           <a href="#specs" data-transition="Control">Context diet</a>
-          <a href="#api" data-transition="API Layer">Contract JSON</a>
+          <a href="api.html">Contract JSON</a>
         </div>
         <div class="footer-col">
           <h3>Contact</h3>
@@ -1877,7 +2013,7 @@ runAgent({
       <div class="footer-bottom">
         <div class="footer-legal">
           <a href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">Source</a>
-          <a href="#api" data-transition="API Layer">API</a>
+          <a href="api.html">API</a>
           <a href="#architecture" data-transition="Architecture">System</a>
         </div>
         <div class="footer-social">
@@ -1892,7 +2028,7 @@ runAgent({
           <a class="dock-logo" href="#top" data-transition="Launch">tb.</a>
           <a href="#forecast" data-transition="Forecast">Forecast</a>
           <a href="#specs" data-transition="Control">Control</a>
-          <a href="#api" data-transition="API Layer">API</a>
+          <a href="api.html">API</a>
           <a class="dock-visit" href="https://github.com/YUK1207/token-budget-estimator" target="_blank" rel="noreferrer">GitHub</a>
         </nav>
       </div>
