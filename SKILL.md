@@ -10,7 +10,7 @@ Forecast whole-task tokens before the solver starts. Inputs are task text, light
 ## Workflow
 
 1. Summarize the task and identify the target repository.
-2. Run `scripts/estimate.py estimate` before execution. Keep `history_model.py` and `preflight_model.py` beside it.
+2. Run `scripts/estimate.py estimate` before execution. Keep the entire `scripts/` directory, including `task_neighbors.py`.
 3. Supply exact model/version, harness/version and an execution configuration ID when known. Never invent identifiers to force history matching.
 4. Pass a stable canonical instance ID to exclude the current task from history.
 5. Save JSON before solving if actual usage will be recorded later.
@@ -36,7 +36,8 @@ Optional flags:
 --output-price-per-million <price>
 --currency <currency>
 --task-kind <auto|code_repair>
---point-model <auto|median|ridge>
+--point-model <auto|median|ridge|repository|retrieval>
+--repository <owner/repo>
 --predictor <adaptive|legacy>
 --repo-signals-file <exact-base-commit-counts.json>
 ```
@@ -48,6 +49,7 @@ If the script cannot run, use `references/token-model.md` as an explicitly uncal
 - `midpoint_tokens` is the arithmetic interval midpoint, not P50.
 - The default P50 is an unvalidated median proxy, not the interval midpoint. New budget upper predictions use `budget_upper_tokens`; P90 is reserved for the legacy ratio mode.
 - Five fit tasks enable configuration-wide hierarchy. Sparse types shrink toward the configuration median. Feature regression is selected only on fit-only validation, never calibration/test labels.
+- Automatic candidate selection uses five-fold validation inside fitting history and retains hierarchy unless a candidate improves aggregate MAE by 5% and wins at least 80% of usable folds. Repository priors and TF-IDF neighbors use fitting history only. Report `model_validation` and `prediction_support` when available; candidate availability does not establish improved accuracy.
 - Use `--task-kind code_repair` for an explicitly declared repository repair task. Do not infer it from a hidden answer or outcome.
 - Nineteen independent calibration tasks enable a one-sided 90% budget-coverage target under exchangeability and consistent configuration. This is not a central 90% interval or measured accuracy. With insufficient calibration the upper is a scenario, not a calibrated budget.
 - Confidence remains `low` or `unvalidated`; sample count alone does not demonstrate quality.

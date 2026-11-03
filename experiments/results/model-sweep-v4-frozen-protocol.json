@@ -1,0 +1,61 @@
+{
+  "status": "retrospective_seen_158_benchmark; development_selection_uses_fit_only",
+  "fit": 71,
+  "calibration": 43,
+  "benchmark": 158,
+  "seed": 20261103,
+  "models": [
+    "random_forest_numeric",
+    "random_forest_augmented",
+    "extra_trees_numeric",
+    "extra_trees_augmented",
+    "catboost_numeric",
+    "catboost_augmented",
+    "elastic_net_numeric",
+    "elastic_net_augmented",
+    "lightgbm_numeric",
+    "lightgbm_augmented",
+    "tfidf_ridge",
+    "tfidf_knn",
+    "ours_hierarchy",
+    "ours_ridge",
+    "ours_repository",
+    "ours_repo_text",
+    "ours_auto"
+  ],
+  "feature_conditions": {
+    "numeric": "same original 8 counts",
+    "augmented": "8 counts + fit-only repository onehot + fit-only TFIDF-256",
+    "text": "fit-only TFIDF-256; no repository identity"
+  },
+  "versions": {
+    "sklearn": "1.6.1",
+    "catboost": "1.2.8",
+    "lightgbm": "4.6.0",
+    "numpy": "1.26.4"
+  },
+  "fixed_parameters": {
+    "trees": 200,
+    "tree_depth": 4,
+    "tree_min_leaf": 5,
+    "catboost_iterations": 300,
+    "catboost_depth": 4,
+    "catboost_l2": 10,
+    "elastic_alpha": 0.1,
+    "elastic_l1_ratio": 0.5,
+    "text_ridge_alpha": 10,
+    "knn_k": 5,
+    "tfidf_max_features": 256,
+    "lightgbm_rounds": 300,
+    "lightgbm_leaves": 15,
+    "lightgbm_min_leaf": 10
+  },
+  "input_hashes": {
+    "model_sweep.py": "2ee70587d6568ef43ca203b84b5a6e9c8c7c72e7d8bfed15fbb2494825d09fcd",
+    "history-adaptive.jsonl": "c1ad34ea7bdc64d02d0826c7faab259760e49638082b2311138ba4b27769dbc7",
+    "predictions.jsonl": "f149d66c344704943018fc89b96d7eb4a0b69dd405bb1c36278c84ea7704815d",
+    "tasks.json": "b1c6e35e51b135b585ee361267ab7d5323a335fe2b4433aef8a7318ed033fa40",
+    "preflight_model.py": "2aaef5ee422ecaa29128ffcd98e99e6c28ddfabb384ba4740d8a4520d2d70511",
+    "task_neighbors.py": "c604c4c09201989cf76bf10fec56232c0c77e73e99993d8f5a14c2771d9a1231"
+  }
+}

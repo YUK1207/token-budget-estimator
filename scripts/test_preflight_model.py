@@ -19,6 +19,46 @@ def row(i, actual=10000, kind='debugging', split='fit', features=None):
 
 
 class AdaptiveTests(unittest.TestCase):
+    def test_repository_calibration_matches_availability_in_both_directions(self):
+        rows = [row(i, features={'repository': 'a/repo'}) for i in range(10)]
+        rows += [row(100+i, 10000, split='calibration', features={'repository': 'a/repo'}) for i in range(20)]
+        rows += [row(200+i, 100000, split='calibration') for i in range(19)]
+        known = self.forecast(rows, features={'repository': 'a/repo'}, point_model='repository')
+        missing = self.forecast(rows, point_model='repository')
+        self.assertEqual(known.calibration_samples, 20)
+        self.assertEqual(missing.calibration_samples, 19)
+        self.assertTrue(known.calibrated)
+        self.assertTrue(missing.calibrated)
+
+    def test_repository_candidate_is_selected_only_with_oof_evidence(self):
+        rows = []
+        for i in range(100):
+            repo = 'a/repo' if i < 50 else 'b/repo'
+            features = model.feature_snapshot('Generic task', 0, 0, 0, False, 0, repository=repo)
+            rows.append(row(i, 10000 if i < 50 else 1000000, features=features))
+        result = self.forecast(rows, features=model.feature_snapshot('Generic task', 0, 0, 0, False, 0, repository='a/repo'))
+        self.assertIn(result.point_method, {'repository_shrinkage', 'task_similarity_shrinkage'})
+        self.assertGreaterEqual(result.selection_report['usable_folds'], 4)
+        self.assertLess(result.p50_tokens, 100000)
+
+    def test_repository_and_text_candidates_use_only_fit_support(self):
+        rows = [row(i, 20000, features={'repository': 'a/repo'}) for i in range(10)]
+        rows += [row(30+i, 100000, features={'repository': 'b/repo'}) for i in range(10)]
+        result = self.forecast(rows, features={'repository': 'a/repo'}, point_model='repository')
+        self.assertEqual(result.point_method, 'repository_shrinkage')
+        self.assertEqual(result.support['repository_fit_samples'], 10)
+        self.assertLess(result.p50_tokens, 60000)
+        absent = self.forecast(rows, features={'repository': 'unknown/repo'}, point_model='repository')
+        self.assertEqual(absent.support['repository_fit_samples'], 0)
+        self.assertEqual(absent.p50_tokens, 60000)
+
+    def test_history_digest_covers_task_text_for_semantic_models(self):
+        rows = [row(i) for i in range(8)]
+        before = self.forecast(rows, point_model='retrieval')
+        rows[0]['task'] = 'A completely different task description'
+        after = self.forecast(rows, point_model='retrieval')
+        self.assertNotEqual(before.history_digest, after.history_digest)
+
     def forecast(self, rows, **options):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'history'

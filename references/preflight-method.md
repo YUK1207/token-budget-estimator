@@ -17,7 +17,9 @@ If the type is absent, use the configuration median. At least five fit tasks are
 
 The ridge candidate uses standardized features and log(total tokens) targets. Feature means/scales use fitting data only; the fixed L2 penalty is 10. An unpenalized intercept is adjusted by the training median log residual. Standardized query values are clipped to [-5, 5] as a fixed numerical extrapolation guard. The exponentiated point is a median proxy under modeling assumptions, not a proven conditional median.
 
-For automatic selection, a stable task-ID hash reserves one fifth of supported fit records for validation. Require twenty supported training records and five validation records. Ridge is selected only if its validation MAE is less than 95% of BOTH the hierarchical and configuration-median MAE. Otherwise retain hierarchy. Refit a winning ridge on all supported fitting rows; calibration and final test records never select it. Explicit model overrides are diagnostics and must not be chosen using final test results.
+Optional repository identity is metadata alongside the unchanged eight numeric features. A repository log-median prior shrinks toward the hierarchical log point with weight `n_repo/(n_repo+10)`. Unknown repositories retain hierarchy. The text candidate builds a standard-library TF-IDF index exclusively from fitting task descriptions. It uses the five positive-cosine nearest tasks, their cosine-squared weighted median log cost, and a blend weight `min(0.5, sum(weights)/(1+sum(weights)))` toward the repository prior. Empty or unmatched text retains the prior. Neither candidate adds model calls.
+
+For automatic selection, a stable task-ID hash assigns five folds within fitting history. Require at least thirty fit records and at least four usable folds, each with twenty training and three validation tasks. Compare hierarchy, ridge, repository and repository-plus-text candidates. A candidate must achieve aggregate validation MAE below 95% of hierarchy and improve at least `ceil(0.8 * usable_folds)` folds. Select the eligible candidate with lowest MAE; otherwise retain hierarchy. Every fold rebuilds text vocabulary, priors and ridge scaling on its training portion only. Refit the selected candidate on all fitting rows; calibration and final test labels never select it. Explicit overrides are diagnostics and must not be chosen using final test results. JSON exposes the validation report and query support counts.
 
 ## One-sided budget calibration
 
@@ -25,13 +27,15 @@ For the fixed selected point function p(x), use independent calibration scores `
 
 This is one-sided calibration: the event is `actual <= budget_upper`, with a 90% marginal target under exchangeability. It is not a central 90% interval, a per-task guarantee or a claim of empirical accuracy. `low_tokens=0` is a nonnegative support endpoint, not a learned lower quantile. Compare empirical upper coverage and excess budget on held-out tasks. For a ridge, calibration rows need compatible feature snapshots; missing-feature calibration cannot validate a feature-bearing model.
 
+For repository and text candidates, calibration repository-metadata availability must match the query in both directions. This keeps the same missing-metadata prediction branch at calibration and prediction time. Fewer than nineteen matching calibration tasks means no calibrated budget. Availability matching alone does not establish conditional coverage by repository.
+
 Without calibration, the high scenario uses the fit empirical P90 extended to at least the point, labeled `one_sided_uncalibrated`; the separate calibrated budget field remains null. The point field `p50_tokens` is retained for compatibility but `point_semantics` explicitly says median proxy. Legacy ratio P90 remains available only in legacy mode.
 
 ## Data boundaries and evaluation
 
 Schema-v2 records preserve versioned feature snapshots and frozen predictions. Exact profile identity, task grouping, natural-termination filtering and held-out test exclusion apply configuration-wide. Completed successes and confirmed natural solver failures are eligible; caps and infrastructure failures are excluded. An unresolved benchmark label alone does not prove natural termination.
 
-Point quality, single-sided coverage, and budget excess must be evaluated separately. The second offline experiment reserves the previously unused second 250 source tasks for final evaluation; the original 29 test tasks remain diagnostic only. No tuning follows inspection of this final test. Source selection still restricts the population to successful historical runs until failure termination can be established.
+Point quality, single-sided coverage, and budget excess must be evaluated separately. The second offline experiment originally reserved the second 250 source tasks for evaluation; the original 29 test tasks remained diagnostic only. Those results have now been inspected, so subsequent comparisons on its 158 eligible successful tasks are explicitly retrospective, not a fresh holdout. Source selection still restricts the population to successful historical runs until failure termination can be established.
 
 Run `experiments/evaluate_swe_preflight.py --data-dir <sanitized-data> --output-dir <results>` to reproduce this bounded experiment. It is not the official SWE-bench patch evaluator. Data/source hashes and frozen predictions are saved before scoring.
 

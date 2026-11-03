@@ -13,7 +13,8 @@ The website's HTTP endpoints and paid plans are design concepts, not implemented
 - English word boundaries prevent `callback` and `small` from matching `all`.
 - History matches model/version, agent/version, execution configuration and baseline version. The adaptive predictor pools types; its hierarchical point retains type information.
 - The default model pools configuration history and shrinks sparse task types toward the configuration median.
-- A standardized log-token ridge candidate is selected only if fit-only validation beats both median baselines by 5%.
+- Optional repository priors and fit-only TF-IDF neighbors add known-start evidence without solver or LLM calls.
+- Deterministic five-fold validation inside fitting history selects a candidate only with a 5% MAE advantage and improvement in at least 80% of usable folds; otherwise hierarchy remains active.
 - Known-start features include task counts, exact repository counts when supplied, and declared initial context.
 - Independent calibration provides a separate one-sided 90% budget upper bound. The prior ratio/central-interval method remains available with `--predictor legacy`.
 - Insufficient data explicitly falls back to rough rules. Sample count alone never establishes confidence.
@@ -30,7 +31,7 @@ Copy the repository into `~/.codex/skills/token-budget-estimator`, then start a 
 $token-budget-estimator Estimate the budget before fixing the failing login tests.
 ```
 
-Keep the whole `scripts/` directory: `estimate.py` imports `history_model.py` and `preflight_model.py`.
+Keep the whole `scripts/` directory, including `history_model.py`, `preflight_model.py` and `task_neighbors.py`.
 
 ## CLI
 
@@ -62,7 +63,9 @@ For SWE-style issue repair use `--task-kind code_repair`, so prose without words
 python scripts/estimate.py estimate --task "Unexpected behavior in parser" --task-kind code_repair --model model-version --agent harness-version --execution-config config-v1 --point-model auto --json
 ```
 
-The default `--point-model auto` selects ridge only using a deterministic validation subset inside the fitting partition. `median` and `ridge` are diagnostic overrides, not parameters to tune on final test outcomes. Fit standardization uses fitting rows only. Missing/incompatible feature history falls back to hierarchy.
+The default `--point-model auto` compares hierarchy, ridge, repository shrinkage and repository-plus-text neighbors using five-fold validation inside fitting history. `median`, `ridge`, `repository` and `retrieval` are diagnostic overrides, not parameters to tune on final test outcomes. Standardization and text vocabulary use fitting rows only. Missing evidence falls back to hierarchy.
+
+`--repository owner/repo` supplies known-start repository identity. Otherwise the CLI reads the local git origin without network access and strips URL credentials. Exact snapshot files may provide `repository` or `snapshot_id=owner/repo@commit`. Unknown repositories use the hierarchical prior. JSON includes `prediction_support` and `model_validation` to explain the evidence and fit-only selection.
 
 `--repo-signals-file repo-counts.json` may supply exact snapshot counts instead of a local scan. Required integer fields: `file_count`, `code_file_count`, `test_file_count`, `config_file_count`. Counts must be nonnegative and components cannot exceed total files. Obtain them at the target base commit, never from gold patches or post-fix trees. Repository scans are bounded at 12000 files. Keep snapshot provenance with experiment artifacts.
 
@@ -73,7 +76,7 @@ The default `--point-model auto` selects ridge only using a deterministic valida
 | `low_tokens`, `high_tokens` | Interval; inspect `interval_method` before interpreting coverage |
 | `midpoint_tokens` | Arithmetic interval midpoint retained for compatibility; **not P50** |
 | `p50_tokens`, `p90_tokens` | New default: unvalidated median proxy in P50, P90 null. Legacy mode retains empirical ratio quantiles |
-| `prediction_method` | Default: `heuristic`, `hierarchical_median`, or `ridge_log`; legacy methods remain available |
+| `prediction_method` | `heuristic`, `hierarchical_median`, `ridge_log`, `repository_shrinkage`, or `task_similarity_shrinkage`; legacy methods remain available |
 | `interval_method` | Default: `heuristic_uncalibrated`, `one_sided_uncalibrated`, or `one_sided_conformal_90` |
 | `budget_upper_tokens` | Calibrated one-sided budget upper, or null when unsupported |
 | `budget_target_coverage` | Marginal upper-coverage target, not central interval coverage |
@@ -86,7 +89,7 @@ The default `--point-model auto` selects ridge only using a deterministic valida
 | `history_digest` | Fingerprint of selected task identities, splits and usage |
 | `budget_status` | `within_budget`, `near_budget`, or `over_budget` |
 
-Five configuration-matched fit tasks enable hierarchy. Feature regression needs at least twenty supported training tasks; automatic selection additionally needs at least five fit-only validation tasks and a fixed 5% MAE advantage over both baselines. Nineteen independent configuration-matched calibration tasks enable the one-sided budget bound. These are operational minima, not evidence of sufficient accuracy. Neither calibration nor final test labels select the point model.
+Five configuration-matched fit tasks enable hierarchy. Automatic selection needs at least thirty fit tasks and four usable validation folds, each with twenty training and three validation tasks. A candidate needs a fixed 5% aggregate MAE advantage over hierarchy and wins in at least 80% of usable folds. Nineteen independent configuration-matched calibration tasks enable the one-sided budget bound. Repository-aware candidates match calibration repository-metadata availability to the query in both directions. These are operational minima, not evidence of sufficient accuracy. Neither calibration nor final test labels select the point model.
 
 With insufficient calibration, the default displays an explicitly uncalibrated [0, scenario upper] using the fitting P90 (extended to the point if needed). `budget_upper_tokens` stays null. A one-sided [0, upper] is not a central uncertainty interval; budget decisions should use the separate calibrated upper field. Legacy mode retains scaled heuristic intervals. Total-only history cannot identify input/output composition or cache pricing: component fields and cost become `null`. Heuristic cost scenarios accept manual input/output prices and omit cache discounts.
 
@@ -138,3 +141,5 @@ Synthetic tests verify calculations, CLI behavior, task isolation and regression
 A [158-task held-out historical evaluation](experiments/results/swe-preflight-v2.md) achieved 89.87% one-sided upper coverage. The selector retained the median baseline; the ridge candidate did not establish a point-quality gain. Point WAPE remained 61.3%. These success-only historical results do not establish new solve rates, generalization or token savings.
 
 A [fixed-protocol external comparison](experiments/results/external-baselines-v3.md) adds plain LightGBM and an official public TokenCast task-launch tree adapter on the same 158 previously seen tasks. The adapter was close to the median with a paired uncertainty interval spanning zero; no superiority to the full TokenCast paper is established. [Reproduction setup](experiments/EXTERNAL_BASELINES.md).
+
+The [repository/text improvement and broader comparison](experiments/results/model-sweep-v4.md) adds six comparison methods and separates numeric-only from text/repository-aware inputs. The new candidates did not improve this retrospective benchmark; fit-only validation correctly retained hierarchy. [Reproduction setup](experiments/MODEL_SWEEP.md).

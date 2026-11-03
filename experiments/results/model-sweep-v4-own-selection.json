@@ -1,0 +1,54 @@
+{
+  "ours_hierarchy": {
+    "selected": "median",
+    "reason": "requested_median",
+    "validation": {
+      "protocol": "fit_only_fivefold_v1",
+      "usable_folds": 0
+    }
+  },
+  "ours_ridge": {
+    "selected": "ridge",
+    "reason": "requested_ridge",
+    "validation": {
+      "protocol": "fit_only_fivefold_v1",
+      "usable_folds": 0
+    }
+  },
+  "ours_repository": {
+    "selected": "repository",
+    "reason": "requested_repository",
+    "validation": {
+      "protocol": "fit_only_fivefold_v1",
+      "usable_folds": 0
+    }
+  },
+  "ours_repo_text": {
+    "selected": "retrieval",
+    "reason": "requested_retrieval",
+    "validation": {
+      "protocol": "fit_only_fivefold_v1",
+      "usable_folds": 0
+    }
+  },
+  "ours_auto": {
+    "selected": "median",
+    "reason": "median_retained_on_fivefold_validation",
+    "validation": {
+      "protocol": "fit_only_fivefold_v1",
+      "usable_folds": 5,
+      "oof_mae": {
+        "median": 923502.0704225352,
+        "ridge": 943838.4084507042,
+        "repository": 929556.1267605633,
+        "retrieval": 951129.8169014085
+      },
+      "fold_wins_vs_median": {
+        "median": 0,
+        "ridge": 1,
+        "repository": 2,
+        "retrieval": 3
+      }
+    }
+  }
+}

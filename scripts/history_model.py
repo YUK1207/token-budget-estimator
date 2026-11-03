@@ -227,7 +227,7 @@ def eligible_records(history_path: Path, profile: dict[str, str], *,
         snapshot = row.get('feature_snapshot')
         if snapshot is None and isinstance(row.get('prediction'), dict):
             snapshot = row['prediction'].get('feature_snapshot')
-        used.append((identity, split, actual, raw, row['task_type'],
+        used.append((identity, split, actual, raw, row['task_type'], task_key(row['task']),
                      hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()))
     digest = hashlib.sha256(json.dumps(sorted(used)).encode('utf-8')).hexdigest()
     return fit, calibration, digest

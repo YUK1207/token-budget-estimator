@@ -10,6 +10,12 @@ import estimate as estimator
 
 
 class PreflightRegressionTests(unittest.TestCase):
+    def test_repository_identity_is_sanitized_and_recorded_as_preflight_metadata(self):
+        self.assertEqual(estimator.normalize_repository('https://token:secret@github.com/Owner/Repo.git'), 'Owner/Repo')
+        with tempfile.TemporaryDirectory() as tmp:
+            result = estimator.estimate('Fix parser', tmp, 0, Path(tmp) / 'absent', repository='owner/repo')
+            self.assertEqual(result.feature_snapshot['repository'], 'owner/repo')
+
     def test_declared_repair_kind_and_feature_record_roundtrip(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()

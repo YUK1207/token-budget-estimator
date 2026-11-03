@@ -8,6 +8,8 @@ import json
 import math
 import os
 import re
+import subprocess
+from urllib.parse import urlsplit
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,6 +41,7 @@ class RepoSignals:
     test_file_count: int
     config_file_count: int
     repo_size: str
+    repository: str | None = None
 
 
 @dataclass
@@ -63,6 +66,7 @@ class ProjectConfig:
     task_kind: str = "auto"
     predictor: str = "adaptive"
     point_model: str = "auto"
+    repository: str | None = None
 
 
 @dataclass
@@ -112,6 +116,8 @@ class Estimate:
     budget_upper_tokens: int | None = None
     budget_target_coverage: float | None = None
     model_selection: str | None = None
+    model_validation: dict | None = None
+    prediction_support: dict | None = None
 
 
 @dataclass
@@ -200,6 +206,7 @@ def load_project_config(cwd: str | Path) -> ProjectConfig:
             peak_context_tokens=_optional_int(data.get("peak_context_tokens")),
             task_kind=str(data.get("task_kind", "auto")), predictor=str(data.get("predictor", "adaptive")),
             point_model=str(data.get("point_model", "auto")),
+            repository=normalize_repository(data.get("repository")),
         )
     return ProjectConfig()
 
@@ -214,6 +221,31 @@ def _optional_float(value: object) -> float | None:
     if value is None:
         return None
     return float(value)
+
+
+def normalize_repository(value: object) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    value = value.strip()
+    host = ""
+    if "://" in value:
+        parsed = urlsplit(value)
+        host, value = parsed.hostname or "", parsed.path.strip("/")
+    elif value.startswith("git@") and ":" in value:
+        host, value = value[4:].split(":", 1)
+    value = value.removesuffix(".git").strip("/")
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+", value):
+        return None
+    return value if host in {"", "github.com", "www.github.com"} else host + "/" + value
+
+
+def infer_repository(root: Path) -> str | None:
+    try:
+        result = subprocess.run(["git", "-C", str(root), "remote", "get-url", "origin"],
+                                capture_output=True, text=True, timeout=2)
+        return normalize_repository(result.stdout.strip()) if result.returncode == 0 else None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
 
 
 def approx_tokens(text: str) -> int:
@@ -257,7 +289,7 @@ def collect_repo_signals(cwd: str, max_files: int = 12000) -> RepoSignals:
     else:
         repo_size = "very_large"
 
-    return RepoSignals(file_count, code_file_count, test_file_count, config_file_count, repo_size)
+    return RepoSignals(file_count, code_file_count, test_file_count, config_file_count, repo_size, infer_repository(root))
 
 
 def contains_term(text: str, term: str) -> bool:
@@ -276,7 +308,10 @@ def load_repo_signals(path: Path) -> RepoSignals:
         raise ValueError("component counts cannot exceed total file count")
     count = data["code_file_count"]
     size = "small" if count < 50 else "medium" if count < 500 else "large" if count < 2000 else "very_large"
-    return RepoSignals(*(data[k] for k in fields), repo_size=size)
+    identity = data.get("repository")
+    if identity is None and isinstance(data.get("snapshot_id"), str):
+        identity = data["snapshot_id"].split("@", 1)[0]
+    return RepoSignals(*(data[k] for k in fields), repo_size=size, repository=normalize_repository(identity))
 
 
 def classify_task(task: str, task_kind: str = "auto") -> str:
@@ -437,6 +472,7 @@ def estimate(
     predictor: str = "adaptive",
     point_model: str = "auto",
     repo_signals: RepoSignals | None = None,
+    repository: str | None = None,
 ) -> Estimate:
     if context_tokens < 0:
         raise ValueError("initial context must be nonnegative")
@@ -494,7 +530,8 @@ def estimate(
     baseline_midpoint = round_to_nice(int((low + high) / 2))
     profile = execution_profile or {}
     features = preflight_model.feature_snapshot(task, repo.file_count, repo.code_file_count,
-                                                repo.test_file_count, repo.repo_size != "unknown", context_tokens)
+                                                repo.test_file_count, repo.repo_size != "unknown", context_tokens,
+                                                repository=normalize_repository(repository) or repo.repository)
     historical = history_model.predict(history_path, task_type, profile, baseline_midpoint,
                                        instance_id=instance_id, task=task, features=features,
                                        strategy=predictor, point_model=point_model)
@@ -581,6 +618,8 @@ def estimate(
         budget_upper_tokens=rounded_high if getattr(historical, "budget_upper_tokens", None) is not None else None,
         budget_target_coverage=historical.target_coverage if getattr(historical, "budget_upper_tokens", None) is not None else None,
         model_selection=getattr(historical, "selection", None),
+        model_validation=getattr(historical, "selection_report", None),
+        prediction_support=getattr(historical, "support", None),
         evidence_note=("Target 90% marginal coverage assumes exchangeable, same-configuration tasks. One-sided budget coverage is not central interval coverage; point accuracy is unvalidated."
                        if historical.calibrated else
                        "Uncalibrated scenario bound. The point is a median proxy, not a validated quantile or success probability."
@@ -612,6 +651,7 @@ def compare_tasks(
     predictor: str = "adaptive",
     point_model: str = "auto",
     repo_signals: RepoSignals | None = None,
+    repository: str | None = None,
 ) -> list[Estimate]:
     results = [
         estimate(
@@ -625,7 +665,7 @@ def compare_tasks(
             output_price_per_million,
             currency,
             execution_profile=execution_profile, peak_context_tokens=peak_context_tokens, instance_id=instance_id,
-            task_kind=task_kind, predictor=predictor, point_model=point_model, repo_signals=repo_signals,
+            task_kind=task_kind, predictor=predictor, point_model=point_model, repo_signals=repo_signals, repository=repository,
         )
         for task in tasks
     ]
@@ -797,6 +837,7 @@ def optimize_task(
     predictor: str = "adaptive",
     point_model: str = "auto",
     repo_signals: RepoSignals | None = None,
+    repository: str | None = None,
 ) -> PromptOptimization:
     original = estimate(
         task,
@@ -809,7 +850,7 @@ def optimize_task(
         output_price_per_million,
         currency,
         execution_profile=execution_profile, peak_context_tokens=peak_context_tokens, instance_id=instance_id,
-            task_kind=task_kind, predictor=predictor, point_model=point_model, repo_signals=repo_signals,
+            task_kind=task_kind, predictor=predictor, point_model=point_model, repo_signals=repo_signals, repository=repository,
     )
     chosen_mode = choose_mode(mode, original)
     optimized_prompt, auto_split, scope_guard, output_caps = build_optimized_prompt(task, original, chosen_mode)
@@ -1000,6 +1041,7 @@ def build_preflight_controller(
     predictor: str = "adaptive",
     point_model: str = "auto",
     repo_signals: RepoSignals | None = None,
+    repository: str | None = None,
 ) -> PreflightController:
     forecast = estimate(
         task,
@@ -1012,7 +1054,7 @@ def build_preflight_controller(
         output_price_per_million,
         currency,
         execution_profile=execution_profile, peak_context_tokens=peak_context_tokens, instance_id=instance_id,
-            task_kind=task_kind, predictor=predictor, point_model=point_model, repo_signals=repo_signals,
+            task_kind=task_kind, predictor=predictor, point_model=point_model, repo_signals=repo_signals, repository=repository,
     )
     roi = assess_roi(forecast)
     contract_mode = choose_contract_mode(mode, forecast, roi)
@@ -1033,6 +1075,7 @@ def render_markdown(result: Estimate) -> str:
         f"- Method: {result.prediction_method}; interval: {result.interval_method}",
         f"- Matching tasks: {result.fit_samples} fit / {result.calibration_samples} calibration",
         f"- Point model: {result.point_method}; selection: {result.model_selection}",
+        f"- Prior support: {result.prediction_support}",
         f"- Evidence: {result.evidence_note}",
         f"- Task type: {result.task_type}",
         f"- Complexity: {result.complexity}/10",
@@ -1290,9 +1333,10 @@ def build_parser() -> argparse.ArgumentParser:
         command_parser.add_argument("--execution-config", default=None, help="Versioned reasoning/context/tool configuration ID.")
         command_parser.add_argument("--instance-id", default=None, help="Stable task ID; excludes this task from history fitting.")
     for command_parser in [estimate_parser, compare_parser, optimize_parser, control_parser]:
+        command_parser.add_argument("--repository", default=None, help="Known-start repository identity, e.g. owner/repo.")
         command_parser.add_argument("--task-kind", choices=["auto", "code_repair"], default=None)
         command_parser.add_argument("--predictor", choices=["adaptive", "legacy"], default=None)
-        command_parser.add_argument("--point-model", choices=["auto", "median", "ridge"], default=None)
+        command_parser.add_argument("--point-model", choices=["auto", "median", "ridge", "repository", "retrieval"], default=None)
         command_parser.add_argument("--repo-signals-file", type=Path, default=None,
                                     help="Declared counts from the exact repository snapshot; no labels.")
         command_parser.add_argument("--peak-context-tokens", type=int, default=None,
@@ -1329,6 +1373,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             predictor=option_value(args.predictor, config.predictor),
             point_model=option_value(args.point_model, config.point_model),
             repo_signals=load_repo_signals(args.repo_signals_file) if args.repo_signals_file else None,
+            repository=option_value(args.repository, config.repository),
         )
         if args.json:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
@@ -1358,6 +1403,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             predictor=option_value(args.predictor, config.predictor),
             point_model=option_value(args.point_model, config.point_model),
             repo_signals=load_repo_signals(args.repo_signals_file) if args.repo_signals_file else None,
+            repository=option_value(args.repository, config.repository),
         )
         if args.json:
             print(json.dumps([asdict(result) for result in results], ensure_ascii=False, indent=2))
@@ -1387,6 +1433,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             predictor=option_value(args.predictor, config.predictor),
             point_model=option_value(args.point_model, config.point_model),
             repo_signals=load_repo_signals(args.repo_signals_file) if args.repo_signals_file else None,
+            repository=option_value(args.repository, config.repository),
         )
         if args.json:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
@@ -1416,6 +1463,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             predictor=option_value(args.predictor, config.predictor),
             point_model=option_value(args.point_model, config.point_model),
             repo_signals=load_repo_signals(args.repo_signals_file) if args.repo_signals_file else None,
+            repository=option_value(args.repository, config.repository),
         )
         if args.json:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))

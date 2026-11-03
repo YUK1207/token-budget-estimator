@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections import OrderedDict
+import hashlib
+import json
 import math
 from pathlib import Path
 import re
 from statistics import mean, median
 
 import history_model as history
+import task_neighbors
 
 FEATURE_VERSION = 'preflight-counts-v1'
 FEATURE_NAMES = ('log_task_chars', 'log_lines', 'log_code_files', 'log_test_files',
@@ -20,17 +24,22 @@ class Forecast(history.HistoricalForecast):
     interval_method: str = 'heuristic_uncalibrated'
     budget_upper_tokens: int | None = None
     selection: str = 'insufficient_history'
+    selection_report: dict | None = None
+    support: dict | None = None
 
 
 def feature_snapshot(task: str, file_count: int, code_count: int, test_count: int,
-                     repo_known: bool, initial_context: int) -> dict:
+                     repo_known: bool, initial_context: int, repository: str | None = None) -> dict:
     """Only declared inputs; file_count is accepted for future schema compatibility."""
     values = [math.log1p(len(task)), math.log1p(task.count('\n')),
               math.log1p(code_count), math.log1p(test_count), float(repo_known),
               math.log1p(initial_context),
               math.log1p(len(re.findall(r'[\w./-]+\.(?:py|js|ts|go|rs|java|cpp|c|h)\b', task))),
               math.log1p(len(re.findall(r'traceback|exception|error|failed|失败|报错', task.lower())))]
-    return {'version': FEATURE_VERSION, 'values': dict(zip(FEATURE_NAMES, values))}
+    result = {'version': FEATURE_VERSION, 'values': dict(zip(FEATURE_NAMES, values))}
+    if repository:
+        result['repository'] = repository.strip()
+    return result
 
 
 def feature_vector(snapshot: object) -> list[float] | None:
@@ -153,6 +162,89 @@ def select_ridge(fit: list[dict], mode: str) -> tuple[Ridge | None, str]:
     return None, 'median_retained_on_fit_only_validation'
 
 
+@dataclass
+class Candidate:
+    kind: str
+    rows: list[dict]
+    ridge: Ridge | None = None
+    text: task_neighbors.TextIndex | None = None
+
+    @classmethod
+    def fit(cls, rows, kind):
+        return cls(kind, rows, fit_ridge(rows) if kind == 'ridge' else None,
+                   task_neighbors.TextIndex(rows) if kind == 'retrieval' else None)
+
+    def predict_log(self, kind, snapshot, task):
+        prior = hierarchy(self.rows, kind)
+        support = dict(repository_fit_samples=0, neighbor_count=0)
+        if self.kind == 'ridge':
+            if self.ridge is not None and valid_snapshot(snapshot):
+                return self.ridge.predict_log(snapshot), support
+            return prior, support
+        if self.kind in {'repository', 'retrieval'}:
+            prior, count = task_neighbors.repository_prior(self.rows, task_neighbors.repository(snapshot), prior)
+            support['repository_fit_samples'] = count
+        if self.text is not None:
+            prior, text_support = self.text.predict_log(task, prior)
+            support.update(text_support)
+        return prior, support
+
+
+_POINT_CACHE = OrderedDict()
+
+
+def select_candidate(fit, mode):
+    if mode not in {'auto', 'median', 'ridge', 'repository', 'retrieval'}:
+        raise ValueError('point model must be auto, median, ridge, repository, or retrieval')
+    signature = hashlib.sha256(json.dumps([(r['instance_id'], r['task'], r['task_type'],
+                                            r['actual_tokens'], row_snapshot(r)) for r in fit],
+                                           sort_keys=True).encode()).hexdigest()
+    key = (signature, mode)
+    if key in _POINT_CACHE:
+        _POINT_CACHE.move_to_end(key)
+        return _POINT_CACHE[key]
+    report = {'protocol': 'fit_only_fivefold_v1', 'usable_folds': 0}
+    chosen, reason = ('median', 'insufficient_fit_only_validation')
+    if mode != 'auto':
+        chosen, reason = mode, 'requested_' + mode
+    elif len(fit) >= 30:
+        kinds = ['median', 'ridge', 'repository', 'retrieval']
+        errors = {k: [] for k in kinds}
+        fold_errors = {k: [] for k in kinds}
+        for fold in range(5):
+            validation = [r for r in fit if int(history.task_key(r['instance_id']), 16) % 5 == fold]
+            training = [r for r in fit if int(history.task_key(r['instance_id']), 16) % 5 != fold]
+            if len(validation) < 3 or len(training) < 20:
+                continue
+            for kind in kinds:
+                model = Candidate.fit(training, kind)
+                loss = [abs(token_point(model.predict_log(r['task_type'], row_snapshot(r), r['task'])[0])
+                            - r['actual_tokens']) for r in validation]
+                errors[kind].extend(loss)
+                fold_errors[kind].append(mean(loss))
+        usable = len(fold_errors['median'])
+        report['usable_folds'] = usable
+        if usable >= 4:
+            averages = {k: mean(v) for k, v in errors.items()}
+            wins = {k: sum(a < b for a, b in zip(v, fold_errors['median'])) for k, v in fold_errors.items()}
+            report.update(oof_mae=averages, fold_wins_vs_median=wins)
+            eligible = [k for k in kinds[1:] if averages[k] < .95 * averages['median']
+                        and wins[k] >= math.ceil(.8 * usable)]
+            if eligible:
+                chosen = min(eligible, key=lambda k: (averages[k], k))
+                reason = chosen + '_won_fivefold_validation'
+            else:
+                reason = 'median_retained_on_fivefold_validation'
+    model = Candidate.fit(fit, chosen)
+    if chosen == 'ridge' and model.ridge is None:
+        model, reason = Candidate.fit(fit, 'median'), 'insufficient_feature_history'
+    result = model, reason, report
+    _POINT_CACHE[key] = result
+    if len(_POINT_CACHE) > 8:
+        _POINT_CACHE.popitem(last=False)
+    return result
+
+
 def predict(history_path: Path, task_type: str, profile: dict[str, str], baseline: int,
             *, task: str = '', instance_id: str | None = None,
             features: dict | None = None, point_model: str = 'auto') -> Forecast:
@@ -160,25 +252,33 @@ def predict(history_path: Path, task_type: str, profile: dict[str, str], baselin
     counts = dict(fit_samples=len(fit), calibration_samples=len(calibration), history_digest=digest)
     if len(fit) < 5:
         return Forecast(**counts)
-    ridge, reason = select_ridge(fit, point_model) if valid_snapshot(features) else (None, 'query_features_unavailable')
-    if ridge is not None:
+    model, reason, selection_report = select_candidate(fit, point_model)
+    if model.kind == 'ridge' and not valid_snapshot(features):
+        model, reason = Candidate.fit(fit, 'median'), 'query_features_unavailable'
+    if model.kind == 'ridge':
         # Feature availability/version must also match at calibration time.
         calibration = [r for r in calibration if valid_snapshot(row_snapshot(r))]
         counts['calibration_samples'] = len(calibration)
+    if model.kind in {'repository', 'retrieval'}:
+        availability = bool(task_neighbors.repository(features))
+        calibration = [r for r in calibration if bool(task_neighbors.repository(row_snapshot(r))) == availability]
+        counts['calibration_samples'] = len(calibration)
 
-    def point_log(kind: str, snapshot: dict | None) -> float:
-        return ridge.predict_log(snapshot) if ridge is not None else hierarchy(fit, kind)
+    def point_log(kind, snapshot, text):
+        return model.predict_log(kind, snapshot, text)[0]
 
-    center = point_log(task_type, features)
+    center, support = model.predict_log(task_type, features, task)
     point = token_point(center)
-    method = 'ridge_log' if ridge is not None else 'hierarchical_median'
+    method = {'ridge': 'ridge_log', 'median': 'hierarchical_median',
+              'repository': 'repository_shrinkage', 'retrieval': 'task_similarity_shrinkage'}[model.kind]
     empirical_high = max(point, math.ceil(history.quantile([r['actual_tokens'] for r in fit], 0.9)))
     result = dict(method=method, point_method=method, p50_tokens=point,
                   low_tokens=0, high_tokens=empirical_high, selection=reason,
+                  selection_report=selection_report, support=support,
                   interval_method='one_sided_uncalibrated', **counts)
     if len(calibration) < 19:
         return Forecast(**result)
-    scores = [math.log(r['actual_tokens']) - point_log(r['task_type'], row_snapshot(r)) for r in calibration]
+    scores = [math.log(r['actual_tokens']) - point_log(r['task_type'], row_snapshot(r), r['task']) for r in calibration]
     rank = math.ceil((len(scores) + 1) * 0.9)
     if rank > len(scores):
         return Forecast(**result)

@@ -34,4 +34,4 @@ Fields:
 
 Do not commit private pricing or account-specific budget assumptions unless the project owner wants them versioned.
 
-`task_kind` may be `auto` or explicitly `code_repair`. `predictor` is `adaptive` or `legacy`. `point_model` is `auto`, `median`, or `ridge`; select on fitting/validation data only.
+`task_kind` may be `auto` or explicitly `code_repair`. `predictor` is `adaptive` or `legacy`. `point_model` is `auto`, `median`, `ridge`, `repository`, or `retrieval`; select on fitting/validation data only. Optional `repository` supplies a known-start `owner/repo` identity; otherwise the local git origin is used when available.
