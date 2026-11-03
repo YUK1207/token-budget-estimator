@@ -4,6 +4,9 @@ Place `.token-budget.json` in a project directory to provide defaults for estima
 
 ```json
 {
+  "model": "model-version",
+  "agent": "harness-version",
+  "execution_config": "reasoning-medium-context-v1",
   "budget_tokens": 50000,
   "context_tokens": 8000,
   "context_window": 128000,
@@ -19,7 +22,9 @@ Fields:
 
 - `budget_tokens`: upper token budget for budget checks.
 - `context_tokens`: known existing conversation/context tokens.
-- `context_window`: model context window used for fit checks.
+- `context_window`: single-request context limit; fit is unknown without a supplied peak.
+- `peak_context_tokens`: separately supplied peak request scenario, not cumulative usage.
+- `model`, `agent`, `execution_config`: exact identifiers for v2 history matching.
 - `input_price_per_million`: input-token price for cost estimates.
 - `output_price_per_million`: output-token price for cost estimates.
 - `currency`: display currency label.

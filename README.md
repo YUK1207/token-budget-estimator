@@ -1,314 +1,116 @@
 # Token Budget Estimator
 
-A Codex skill and CLI utility for estimating full agent-task token usage before execution.
+A pure-preflight Codex skill and Python CLI for estimating total agent input + output tokens **before the solver starts**. Python 3.10+, standard library only.
 
-It predicts a token range for the whole task, including prompt text, repository discovery, file reads, command output, test failures, retry loops, intermediate analysis, and final response. It also supports risk levels, budget checks, context-window fit checks, cost estimates, project configuration, batch comparison, and historical calibration.
+Inputs: task text, lightweight local repository counts, declared execution configuration, and prior usage records. No solver execution, LLM calls, or running-task trajectory inputs. Post-run recording improves future forecasts only.
 
-## Features
+[Website](https://yuk1207.github.io/token-budget-estimator/) · [API concept](https://yuk1207.github.io/token-budget-estimator/api.html) · [Method and papers](references/preflight-method.md)
 
-- Estimate full agent-task token ranges.
-- Classify task type and complexity.
-- Scan repository size signals.
-- Estimate searches, file reads, commands, and retry loops.
-- Report risk: `low`, `medium`, `high`, or `extreme`.
-- Check a token budget with `--budget`.
-- Check context-window fit with `--context-window`.
-- Estimate cost from custom input/output token prices.
-- Compare multiple tasks and rank them by estimated token usage.
-- Optimize rough prompts into budget-aware Codex task contracts.
-- Generate cheap, balanced, or thorough execution modes.
-- Add scope guards, output caps, and auto-split plans for expensive tasks.
-- Show before/after token estimates for optimized prompts.
-- Generate a full preflight controller report with forecast, ROI, budget contract, and context diet plan.
-- Load project defaults from `.token-budget.json`.
-- Record actual usage samples for future calibration.
-- Use as a Codex skill through `$token-budget-estimator`.
+The website's HTTP endpoints and paid plans are design concepts, not implemented services.
 
-## Home Page
+## Changes
 
-This repository includes a product home page at `site/index.html` and an API standard page at `site/api.html`.
+- English word boundaries prevent `callback` and `small` from matching `all`.
+- History matches task type, model/version, agent/version, execution configuration and raw baseline version.
+- P50/P90 come from historical ratios, not the arithmetic midpoint of a wide interval.
+- Independent fit/calibration tasks support split-conformal interval expansion.
+- Insufficient data explicitly falls back to rough rules. Sample count alone never establishes confidence.
+- Peak single-request context is separate from cumulative tokens.
+- Prompt suggestions no longer apply fixed 0.45/0.65/0.82 savings multipliers.
 
-![Token Budget Estimator home page](assets/homepage.png)
+This baseline is inspired by quantile calibration and task-start forecasting. It is not a reproduction of TokenCast or learned CQR. Predictive accuracy and token savings remain unvalidated on a held-out benchmark.
 
-Official Website: [https://yuk1207.github.io/token-budget-estimator/](https://yuk1207.github.io/token-budget-estimator/)
-API Standard: [https://yuk1207.github.io/token-budget-estimator/api.html](https://yuk1207.github.io/token-budget-estimator/api.html)
+## Install
 
-Use it as the GitHub Pages entry point and public project home page. It introduces the skill's forecast, ROI, budget contract, context diet workflow, and API preflight control layer without requiring a backend.
-
-## Installation
-
-### Install As A Codex Skill
-
-Copy this folder into your Codex skills directory:
+Copy the repository into `~/.codex/skills/token-budget-estimator`, then start a new Codex chat:
 
 ```text
-~/.codex/skills/token-budget-estimator
+$token-budget-estimator Estimate the budget before fixing the failing login tests.
 ```
 
-On Windows:
+Keep the whole `scripts/` directory: `estimate.py` imports `history_model.py`.
 
-```text
-C:\Users\<YOU>\.codex\skills\token-budget-estimator
+## CLI
+
+From this repository root:
+
+```bash
+python scripts/estimate.py estimate --task "Fix failing login tests" --cwd /path/to/target-repo --budget 50000 --json
 ```
 
-The final layout should look like:
+For history matching, use stable exact identifiers. The execution configuration should identify reasoning effort, context/compaction policy, prompt/tool versions and termination limits.
 
-```text
-token-budget-estimator/
-|-- SKILL.md
-|-- README.md
-|-- agents/
-|   `-- openai.yaml
-|-- references/
-|   |-- agents-preflight.md
-|   |-- project-config.md
-|   |-- risk-policy.md
-|   |-- task-taxonomy.md
-|   `-- token-model.md
-`-- scripts/
-    |-- estimate.py
-    `-- test_estimate.py
+```bash
+python scripts/estimate.py estimate --task "Fix failing login tests" --cwd /path/to/target-repo --model model-version --agent harness-version --execution-config reasoning-medium-context-v1 --instance-id repo-issue-123 --history /path/to/private-history.jsonl --json > prediction.json
 ```
 
-Restart Codex or start a new Codex thread if the skill is not discovered immediately.
+Save this prediction **before** solving. After the run, record provider-accounted usage from the same scope:
 
-### Validate The Skill
-
-If you have the Codex skill creator validation script available:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\.system\skill-creator\scripts\quick_validate.py" "C:\Users\<YOU>\.codex\skills\token-budget-estimator"
+```bash
+python scripts/estimate.py record --prediction-file prediction.json --actual-tokens 52000 --instance-id repo-issue-123 --outcome completed --history /path/to/private-history.jsonl
 ```
 
-Expected:
+The frozen prediction preserves the raw baseline, configuration and history digest. Recording does not update an already issued forecast. Do not publish private tasks or histories.
 
-```text
-Skill is valid!
+## Output
+
+| Field | Meaning |
+|---|---|
+| `low_tokens`, `high_tokens` | Interval; inspect `interval_method` before interpreting coverage |
+| `midpoint_tokens` | Arithmetic interval midpoint retained for compatibility; **not P50** |
+| `p50_tokens`, `p90_tokens` | Empirical historical quantiles, or `null` |
+| `prediction_method` | `heuristic`, `historical_quantiles`, or `historical_split_conformal` |
+| `interval_method` | `heuristic_uncalibrated` or `split_conformal_90` |
+| `interval_target_coverage` | `0.9` only for calibrated intervals; a marginal target under exchangeability assumptions, not measured accuracy |
+| `fit_samples`, `calibration_samples` | Distinct eligible task counts |
+| `confidence` | `low` for fallback; `unvalidated` for historical predictions |
+| `baseline_midpoint_tokens` | Versioned, history-free scale for ratio fitting |
+| `history_digest` | Fingerprint of selected task identities, splits and usage |
+| `budget_status` | `within_budget`, `near_budget`, or `over_budget` |
+
+Five matching **fit** tasks enable empirical P50/P90. Ten fit tasks and nineteen independent calibration tasks enable the current 90% split-conformal interval. These are operational minima, not evidence of sufficient sample size or accuracy. Calibration values never train the quantiles.
+
+With insufficient calibration, the interval remains a scaled heuristic, explicitly uncalibrated. Total-only history cannot identify input/output composition or cache pricing: component fields and cost become `null`. Heuristic cost scenarios accept manual input/output prices and omit cache discounts.
+
+`--budget` is advisory and exits successfully on `over_budget`. External launchers must parse JSON to enforce policy. Contracts are suggestions, not runtime enforcement.
+
+## Context
+
+`--context-tokens` is known initial context. `--context-window` is a single-request limit. Without a separately supplied peak estimate, context fit is `unknown`.
+
+```bash
+python scripts/estimate.py estimate --task "Fix a bug" --context-window 128000 --peak-context-tokens 64000
 ```
 
-### Run Tests
+`fits` (at most 75%), `tight` (within the window), and `likely_exceeds` use only that supplied peak. The tool does not learn peak context from total usage.
 
-```powershell
-cd "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts"
-python -m unittest test_estimate.py
+## Other commands
+
+```bash
+python scripts/estimate.py compare --task "Explain this function" --task "Refactor the entire project" --json
+python scripts/estimate.py optimize --task "Fix failing tests" --mode cheap --json
+python scripts/estimate.py control --task "Fix failing tests" --budget 50000 --mode balanced --json
 ```
 
-Expected:
+All accept model/agent/configuration/history options. `optimize` suggests a task contract and reports **savings not measured**; selecting a cheaper mode does not numerically reduce the forecast. `control` adds heuristic ROI, contract and context-diet suggestions. Its score is not measured economic return or success probability.
 
-```text
-OK
+Project defaults: [.token-budget.json configuration](references/project-config.md). CLI flags take precedence.
+
+## History and evaluation
+
+- `--split auto` partitions canonical instance IDs deterministically into fit/calibration. Explicit `fit`, `calibration` and `test` are supported. Repeated IDs or normalized task text are grouped; no task can cross partitions.
+- Use the first eligible run per task. Test groups are excluded from both fit and calibration. Keep a separate frozen training history for strict benchmark evaluation.
+- Always pass `--instance-id` when predicting. Current ID and matching task text are excluded. Canonical IDs must remain consistent across prompt variants.
+- Natural solver success (`completed`) and failure (`failed`) are eligible. `capped` and `environment_error` runs are recorded but excluded: their observed tokens are not natural completion costs.
+- Target provider input + output across one solver run. Count cache-read input once; do not add reasoning tokens twice if included in output. Track setup, evaluator and environment-retry costs separately.
+- Legacy `record --task ... --task-type ... --predicted-low ... --predicted-high ... --predicted-midpoint ... --actual-tokens ...` remains accepted as schema v1, but cannot calibrate v2 forecasts without configuration/raw baseline.
+- On untouched tasks report point MAE/WAPE and bias, interval coverage **and width**, and solver success/cost for any proposed policy. Compare against raw heuristics and a same-configuration historical median.
+- Three runs in one repository do not establish generalization. Interval hits and unit tests do not establish predictive accuracy.
+
+## Tests
+
+```bash
+python -m unittest discover -s scripts -v
 ```
 
-## Use In Codex
-
-Mention the skill before the task:
-
-```text
-$token-budget-estimator 预测这个任务要消耗多少 token：
-帮我修复登录测试失败，并运行相关测试。
-```
-
-Example output:
-
-```text
-Token Preflight
-- Estimate: 8k-144k tokens
-- Risk: extreme
-- Confidence: low
-- Task type: test_repair
-- Main drivers: searches, file reads, commands, failure/retry loops
-- Recommendation: Split the task before execution because the estimate exceeds the provided budget.
-```
-
-## CLI Usage
-
-Run the estimator directly:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" estimate --task "Fix failing login tests" --cwd "D:\path\to\repo"
-```
-
-### JSON Output
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" estimate --task "Fix failing login tests" --cwd "D:\path\to\repo" --json
-```
-
-## Budget Checks
-
-Use `--budget` to set a token ceiling:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" estimate --task "Refactor the entire project and run all tests" --cwd "D:\path\to\repo" --budget 50000
-```
-
-Budget status values:
-
-- `within_budget`
-- `near_budget`
-- `over_budget`
-
-## Context Window Checks
-
-Use `--context-window` to check whether the upper estimate fits a model context window:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" estimate --task "Fix failing tests" --cwd "D:\path\to\repo" --context-window 128000
-```
-
-Context fit values:
-
-- `fits`: upper estimate is at most 75% of the context window.
-- `tight`: upper estimate is within the context window but above 75%.
-- `likely_exceeds`: upper estimate is above the context window.
-
-## Cost Estimates
-
-Provide custom prices per one million tokens:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" estimate --task "Fix failing tests" --cwd "D:\path\to\repo" --input-price-per-million 1.25 --output-price-per-million 10.0 --currency USD
-```
-
-The skill does not hard-code model prices. Pass your own prices so the estimate stays current.
-
-## Project Configuration
-
-Create `.token-budget.json` in your project root:
-
-```json
-{
-  "budget_tokens": 50000,
-  "context_tokens": 8000,
-  "context_window": 128000,
-  "input_price_per_million": 1.25,
-  "output_price_per_million": 10.0,
-  "currency": "USD"
-}
-```
-
-Then run:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" estimate --task "Fix failing tests" --cwd "D:\path\to\repo"
-```
-
-CLI flags override `.token-budget.json`.
-
-## Compare Multiple Tasks
-
-Compare repeated `--task` values:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" compare --task "Explain this function" --task "Upload this skill to GitHub" --task "Refactor the entire project and run all tests" --cwd "D:\path\to\repo"
-```
-
-Example output:
-
-```text
-Token Budget Comparison
-
-| Rank | Estimate | Risk | Type | Recommendation |
-|---:|---:|---|---|---|
-| 1 | 31k-506k | extreme | large_project_task | Start with a discovery-only pass that identifies files, commands, and risks. |
-| 2 | 5k-85k | high | git_publish | Split into inspect, commit, and push phases if repository setup is uncertain. |
-| 3 | 3k-41k | medium | code_explanation | Continue, but cap noisy command output and keep the work focused. |
-```
-
-You can also use a task file with one task per line:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" compare --tasks-file ".\tasks.txt" --cwd "D:\path\to\repo"
-```
-
-## Optimize A Prompt
-
-Use `optimize` to turn a rough task into a budget-aware Codex task contract:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" optimize --task "Refactor the entire project and run all tests" --cwd "D:\path\to\repo" --budget 50000 --mode cheap
-```
-
-Modes:
-
-- `cheap`: discovery-first, strict scope, minimal commands.
-- `balanced`: scoped implementation with focused validation.
-- `thorough`: broader validation while still avoiding unrelated exploration.
-
-The optimizer outputs:
-
-- original estimate
-- optimized estimate
-- budget mode
-- optimized prompt
-- task contract sections: goal, scope, execution plan, output caps, validation
-- automatic split plan when useful
-
-It intentionally does not output a prompt diff by default.
-
-## Generate A Preflight Controller Report
-
-Use `control` when you want the strongest pre-execution guidance:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" control --task "Fix the failing login tests and run focused pytest targets" --cwd "D:\path\to\repo" --budget 50000 --context-window 128000 --mode cheap
-```
-
-The report includes:
-
-- **Token Forecast**: estimated token range, risk, task type, token drivers.
-- **ROI Assessor**: whether to execute now, split first, run discovery first, or defer.
-- **Budget Contract Generator**: max files, max commands, max log lines, denied actions, stop-loss conditions.
-- **Context Diet Planner**: what to read first, what to read second, what to avoid initially.
-- **Recommended First Pass Prompt**: a ready-to-use Codex task that follows the budget contract.
-
-This is the best command when you want Codex to find the lowest-token path with the highest expected value before implementation.
-
-## Record Actual Usage
-
-After a task finishes, record actual usage if you know it:
-
-```powershell
-python "C:\Users\<YOU>\.codex\skills\token-budget-estimator\scripts\estimate.py" record --task "Fix failing login tests" --task-type test_repair --predicted-low 8000 --predicted-high 144000 --predicted-midpoint 76000 --actual-tokens 52000
-```
-
-By default, samples are stored in:
-
-```text
-~/.codex/token-budget-estimator/history.jsonl
-```
-
-Future predictions use same-task-type history to calibrate estimates.
-
-## Task Types
-
-Current task types:
-
-- `simple_question`
-- `code_explanation`
-- `small_code_change`
-- `debugging`
-- `test_repair`
-- `feature_development`
-- `frontend_build`
-- `git_publish`
-- `refactor`
-- `research_or_docs`
-- `large_project_task`
-
-## Make It A Preflight Rule
-
-Skill invocation is normally intent-based. To make this run before non-trivial tasks in a project, add the rule from:
-
-```text
-references/agents-preflight.md
-```
-
-to your project `AGENTS.md`.
-
-## Notes
-
-- Estimates are ranges, not exact values.
-- The high end intentionally includes uncertainty from failed tests, command logs, and retries.
-- For small direct questions, the report may be more useful as a rough budget than as a strict gate.
-- For high or extreme risk, split the task before execution.
+Synthetic tests verify calculations, CLI behavior, task isolation and regressions. They do not measure forecast quality.

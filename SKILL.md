@@ -5,112 +5,62 @@ description: Estimate total token usage before launching Codex or coding-agent t
 
 # Token Budget Estimator
 
-Estimate the full agent-task token budget before execution. Predict the total token range created by user input, repository discovery, code reading, command output, failed tests, retries, intermediate analysis, and final response. Do not present a precise single number.
+Forecast whole-task tokens before the solver starts. Inputs are task text, lightweight repository signals, declared configuration and prior usage. Never launch a solver or add LLM calls to produce a forecast. Post-run recording improves future tasks only.
 
-## Preflight Workflow
+## Workflow
 
-1. Build a compact task summary from the user's request, current working directory, known constraints, and whether the task likely modifies code.
-2. Run `scripts/estimate.py` with the task text and current working directory when a shell is available.
-3. If the script cannot run, apply the model in `references/token-model.md` manually.
-4. Render the budget report before starting the requested task.
-5. For high or extreme risk, recommend a smaller first task. Wait for confirmation only when project instructions or the user require it.
-6. After execution, if actual usage is available, record the prediction and actual token usage with `scripts/estimate.py record` so future predictions can calibrate.
-
-## Command
-
-Use:
+1. Summarize the task and identify the target repository.
+2. Run `scripts/estimate.py estimate` before execution. Keep `history_model.py` beside it.
+3. Supply exact model/version, harness/version and an execution configuration ID when known. Never invent identifiers to force history matching.
+4. Pass a stable canonical instance ID to exclude the current task from history.
+5. Save JSON before solving if actual usage will be recorded later.
+6. Report method, evidence limits, interval, empirical P50/P90 when available, risk and budget status. Respect existing user authorization; checks and contracts are advisory.
+7. After execution, record actual usage from the frozen prediction, with the correct outcome and partition.
 
 ```bash
-python <skill-dir>/scripts/estimate.py estimate --task "<user task>" --cwd "<project cwd>"
+python <skill-dir>/scripts/estimate.py estimate --task "<task>" --cwd "<target-repo>" --budget 50000 --json
 ```
 
 Optional flags:
 
+```text
+--model <exact-model-version>
+--agent <harness-version>
+--execution-config <reasoning-context-tools-config-version>
+--instance-id <canonical-task-id>
+--history <private-history.jsonl>
+--context-tokens <known-initial-context>
+--context-window <single-request-window>
+--peak-context-tokens <separately-estimated-peak>
+--input-price-per-million <price>
+--output-price-per-million <price>
+--currency <currency>
+```
+
+If the script cannot run, use `references/token-model.md` as an explicitly uncalibrated fallback. Do not manufacture historical quantiles or calibrated coverage manually.
+
+## Interpretation
+
+- `midpoint_tokens` is the arithmetic interval midpoint, not P50.
+- P50/P90 require five matching independent fit tasks and remain empirical, unvalidated estimates.
+- Ten fit and nineteen independent calibration tasks enable the 90% marginal coverage target, assuming exchangeable tasks and consistent configuration. This is not measured accuracy.
+- Confidence remains `low` or `unvalidated`; sample count alone does not demonstrate quality.
+- Total-only calibration leaves component token splits and cost unknown. Explain `null` values instead of inventing them.
+- Cumulative usage does not measure peak context. Without a supplied peak, context fit is `unknown`.
+- `--budget` reports a status, not an enforced runtime stop or nonzero exit on over-budget forecasts.
+
+## Prompt and policy suggestions
+
+`optimize` suggests a task contract. `control` adds a heuristic ROI, contract and context-diet report. Both remain preflight-only; modes are `cheap`, `balanced`, and `thorough`.
+
+Prompt suggestions do not change the forecast automatically. Report "savings not measured"; do not claim fixed percentage discounts as predicted or achieved savings. ROI scores are policy heuristics, not validated economic returns.
+
+## Record
+
 ```bash
---context-tokens 12000
---budget 50000
---context-window 128000
---input-price-per-million 1.25
---output-price-per-million 10.0
---currency USD
---actual-tokens 42000
---history <path-to-jsonl>
---json
+python <skill-dir>/scripts/estimate.py record --prediction-file <frozen-estimate.json> --instance-id <task-id> --actual-tokens <usage> --history <private-history.jsonl> --outcome completed
 ```
 
-Use `--json` when another tool or script will consume the result. Use the default Markdown output for user-facing preflight reports.
+Use `failed` for natural solver failure, `capped` for interrupted runs, or `environment_error` for infrastructure failure. `--split auto` separates fit/calibration by task identity; `--split test` reserves outcomes from fitting. Keep benchmark history frozen for strict evaluation.
 
-Optimize a prompt under a token budget:
-
-```bash
-python <skill-dir>/scripts/estimate.py optimize --task "<rough task>" --budget 50000 --mode cheap
-```
-
-Use `optimize` when the user wants a cheaper, safer Codex-ready task contract. It produces a compressed task, scope guard, output caps, auto-split plan, and before/after estimates. Do not produce a prompt diff unless the user explicitly asks for one.
-
-Generate a full preflight controller report:
-
-```bash
-python <skill-dir>/scripts/estimate.py control --task "<task>" --budget 50000 --mode cheap
-```
-
-Use `control` when the user wants the strongest pre-execution guidance. It combines Token Forecast, ROI Assessor, Budget Contract Generator, and Context Diet Planner.
-
-Compare multiple tasks:
-
-```bash
-python <skill-dir>/scripts/estimate.py compare --task "Fix failing tests" --task "Publish this skill to GitHub" --cwd "<project cwd>"
-```
-
-Use a project-level `.token-budget.json` to avoid repeating common defaults. See `references/project-config.md`.
-
-## Report Requirements
-
-Always include:
-
-- Estimated total token range.
-- Risk level: low, medium, high, or extreme.
-- Confidence: low, medium, or high.
-- Task type and complexity.
-- Main token drivers.
-- Budget check when a user provides a token ceiling.
-- Context fit when a context window is configured.
-- Cost estimate when input/output prices are configured.
-- Recommended execution shape.
-
-Use this concise format:
-
-```markdown
-**Token Preflight**
-- Estimate: 18k-42k tokens
-- Risk: medium
-- Confidence: medium
-- Task type: debugging + tests
-- Main drivers: repository search, reading 8-18 files, 2-5 test runs, possible failure logs
-- Budget check: within_budget against 50k tokens
-- Context fit: fits against 128000 tokens
-- Cost estimate: USD 0.02-0.18
-- Recommendation: continue, but cap test output and fix one failure chain first
-```
-
-## Risk Policy
-
-Use `references/risk-policy.md` for thresholds and recommended behavior.
-Use `references/agents-preflight.md` when the user wants this skill to run before every agent task.
-
-Default behavior:
-
-- Low: continue after a compact report.
-- Medium: continue after naming the likely token drivers.
-- High: suggest splitting and ask for confirmation if the task is broad or destructive.
-- Extreme: recommend a discovery-only pass first.
-
-## References
-
-- Read `references/task-taxonomy.md` when the task type is ambiguous.
-- Read `references/token-model.md` when adjusting formulas or explaining the prediction model.
-- Read `references/risk-policy.md` when deciding whether to continue, ask for confirmation, or split.
-- Read `references/project-config.md` when configuring default budgets, context windows, or prices.
-- Read `references/prompt-optimization.md` when optimizing prompts or explaining budget modes.
-- Read `references/preflight-controller.md` when generating ROI, budget contracts, or context diet plans.
-- Read `references/agents-preflight.md` when installing a project-level or global preflight rule.
+Read [method and papers](references/preflight-method.md) for architecture and assumptions, [configuration](references/project-config.md) for defaults, [prompt suggestions](references/prompt-optimization.md) and [policy report](references/preflight-controller.md) as needed.

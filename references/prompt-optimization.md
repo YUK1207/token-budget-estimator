@@ -2,6 +2,8 @@
 
 Use prompt optimization when a task is broad, vague, expensive, over budget, or likely to make the agent explore too much of the repository.
 
+The optimizer suggests a contract; it does not execute or enforce it. Fixed discount multipliers have been removed.
+
 The optimizer must:
 
 - Compress repeated or vague wording.
@@ -10,7 +12,7 @@ The optimizer must:
 - Add scope guards to prevent unrelated file reads.
 - Add output caps to reduce command-log token waste.
 - Add auto-split stages when the task is high risk.
-- Provide before/after token estimates.
+- Retain the forecast until savings are measured; report savings as not measured.
 
 Do not output a prompt diff unless the user explicitly asks for one.
 

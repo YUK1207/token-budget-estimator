@@ -7,11 +7,13 @@ import argparse
 import json
 import math
 import os
+import re
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
-from statistics import median
 from typing import Iterable
 
+import history_model
 
 TASK_PROFILES = {
     "simple_question": {"complexity": 1, "searches": (0, 1), "files": (0, 1), "commands": (0, 0), "failures": (0, 0)},
@@ -52,6 +54,10 @@ class ProjectConfig:
     input_price_per_million: float | None = None
     output_price_per_million: float | None = None
     currency: str = "USD"
+    model: str | None = None
+    agent: str | None = None
+    execution_config: str | None = None
+    peak_context_tokens: int | None = None
 
 
 @dataclass
@@ -63,10 +69,10 @@ class Estimate:
     low_tokens: int
     high_tokens: int
     midpoint_tokens: int
-    input_low_tokens: int
-    input_high_tokens: int
-    output_low_tokens: int
-    output_high_tokens: int
+    input_low_tokens: int | None
+    input_high_tokens: int | None
+    output_low_tokens: int | None
+    output_high_tokens: int | None
     calibration_ratio: float
     repo: RepoSignals
     drivers: list[str]
@@ -78,6 +84,22 @@ class Estimate:
     rank: int | None = None
     budget_tokens: int | None = None
     budget_status: str | None = None
+
+    task_text: str = ""
+    baseline_version: str = history_model.BASELINE_VERSION
+    baseline_midpoint_tokens: int = 0
+    prediction_method: str = "heuristic"
+    p50_tokens: int | None = None
+    p90_tokens: int | None = None
+    interval_method: str = "heuristic_uncalibrated"
+    interval_target_coverage: float | None = None
+    fit_samples: int = 0
+    calibration_samples: int = 0
+    history_digest: str | None = None
+    execution_profile: dict[str, str] | None = None
+    instance_id: str | None = None
+    peak_context_tokens: int | None = None
+    evidence_note: str = "Rule-based rough estimate; no calibrated coverage."
 
 
 @dataclass
@@ -161,6 +183,9 @@ def load_project_config(cwd: str | Path) -> ProjectConfig:
             input_price_per_million=_optional_float(data.get("input_price_per_million")),
             output_price_per_million=_optional_float(data.get("output_price_per_million")),
             currency=str(data.get("currency", "USD")),
+            model=data.get("model"), agent=data.get("agent"),
+            execution_config=data.get("execution_config"),
+            peak_context_tokens=_optional_int(data.get("peak_context_tokens")),
         )
     return ProjectConfig()
 
@@ -221,21 +246,27 @@ def collect_repo_signals(cwd: str, max_files: int = 12000) -> RepoSignals:
     return RepoSignals(file_count, code_file_count, test_file_count, config_file_count, repo_size)
 
 
+def contains_term(text: str, term: str) -> bool:
+    if term.isascii():
+        return re.search(r"(?<![a-z0-9_])" + re.escape(term) + r"(?![a-z0-9_])", text) is not None
+    return term in text
+
+
 def classify_task(task: str) -> str:
     t = task.lower()
-    has_git_publish = any(w in t for w in [
+    has_git_publish = any(contains_term(t, w) for w in [
         "upload to github", "publish to github", "push to github", "create github repo",
         "github repo", "git remote", "git push", "open source", "release repo",
         "publish skill", "upload skill", "push the branch", "create or configure remote",
     ])
-    has_code = any(w in t for w in ["code", "function", "class", "repo", "project", "代码", "函数", "项目"])
-    has_test = any(w in t for w in ["test", "pytest", "jest", "ci", "failing", "failure", "测试", "报错"])
-    has_bug = any(w in t for w in ["bug", "debug", "fix", "error", "exception", "traceback", "修复", "错误", "失败"])
-    has_frontend = any(w in t for w in ["frontend", "ui", "react", "vue", "page", "dashboard", "browser", "前端", "页面"])
-    has_refactor = any(w in t for w in ["refactor", "rewrite", "restructure", "重构", "改造"])
-    has_research = any(w in t for w in ["research", "search", "look up", "调研", "搜索", "查一下"])
-    has_feature = any(w in t for w in ["add", "build", "create", "implement", "feature", "新增", "实现", "开发", "生成"])
-    broad = any(w in t for w in ["entire", "all", "full", "complete", "全量", "整个", "全部", "完整"])
+    has_code = any(contains_term(t, w) for w in ["code", "function", "class", "repo", "project", "代码", "函数", "项目"])
+    has_test = any(contains_term(t, w) for w in ["test", "pytest", "jest", "ci", "failing", "failure", "测试", "报错"])
+    has_bug = any(contains_term(t, w) for w in ["bug", "debug", "fix", "error", "exception", "traceback", "修复", "错误", "失败"])
+    has_frontend = any(contains_term(t, w) for w in ["frontend", "ui", "react", "vue", "page", "dashboard", "browser", "前端", "页面"])
+    has_refactor = any(contains_term(t, w) for w in ["refactor", "rewrite", "restructure", "重构", "改造"])
+    has_research = any(contains_term(t, w) for w in ["research", "search", "look up", "调研", "搜索", "查一下"])
+    has_feature = any(contains_term(t, w) for w in ["add", "build", "create", "implement", "feature", "新增", "实现", "开发", "生成"])
+    broad = any(contains_term(t, w) for w in ["entire", "all", "full", "complete", "全量", "整个", "全部", "完整"])
 
     if has_git_publish:
         return "git_publish"
@@ -258,28 +289,6 @@ def classify_task(task: str) -> str:
     if has_feature:
         return "small_code_change"
     return "simple_question"
-
-
-def load_calibration(history_path: Path, task_type: str) -> tuple[float, int]:
-    if not history_path.exists():
-        return 1.0, 0
-    ratios: list[float] = []
-    for line in history_path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        try:
-            row = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if row.get("task_type") != task_type:
-            continue
-        predicted = row.get("predicted_midpoint_tokens")
-        actual = row.get("actual_tokens")
-        if isinstance(predicted, (int, float)) and predicted > 0 and isinstance(actual, (int, float)) and actual > 0:
-            ratios.append(float(actual) / float(predicted))
-    if not ratios:
-        return 1.0, 0
-    return max(0.45, min(2.5, median(ratios))), len(ratios)
 
 
 def risk_for(high_tokens: int) -> str:
@@ -330,9 +339,11 @@ def budget_status_for(high_tokens: int, budget_tokens: int | None) -> str | None
     return "over_budget"
 
 
-def context_fit_for(high_tokens: int, context_window: int | None) -> str | None:
+def context_fit_for(high_tokens: int | None, context_window: int | None) -> str | None:
     if context_window is None:
         return None
+    if high_tokens is None:
+        return "unknown"
     if high_tokens <= context_window * 0.75:
         return "fits"
     if high_tokens <= context_window:
@@ -388,6 +399,9 @@ def estimate(
     input_price_per_million: float | None = None,
     output_price_per_million: float | None = None,
     currency: str = "USD",
+    execution_profile: dict[str, str] | None = None,
+    peak_context_tokens: int | None = None,
+    instance_id: str | None = None,
 ) -> Estimate:
     repo = collect_repo_signals(cwd)
     task_type = classify_task(task)
@@ -400,7 +414,7 @@ def estimate(
         complexity += 2
     if repo.test_file_count > 0 and task_type in {"debugging", "test_repair", "feature_development", "refactor"}:
         complexity += 1
-    if any(w in task.lower() for w in ["all", "entire", "full", "complete", "全部", "整个", "完整"]):
+    if any(contains_term(task.lower(), w) for w in ["all", "entire", "full", "complete", "全部", "整个", "完整"]):
         complexity += 1
     complexity = max(1, min(10, complexity))
 
@@ -434,25 +448,37 @@ def estimate(
     low = low_input + low_output
     high = high_input + high_output
 
-    ratio, sample_count = load_calibration(history_path, task_type)
-    low_factor = 0.85 if sample_count < 5 else max(0.65, ratio * 0.85)
-    high_factor = 1.25 if sample_count < 5 else min(2.75, ratio * 1.2)
-    low_input = int(low_input * low_factor)
-    low_output = int(low_output * low_factor)
-    high_input = int(high_input * high_factor)
-    high_output = int(high_output * high_factor)
-    low = low_input + low_output
-    high = high_input + high_output
+    # Versioned raw scale; never calibrate against a previously adjusted forecast.
+    low_input = int(low_input * 0.85)
+    low_output = int(low_output * 0.85)
+    high_input = int(high_input * 1.25)
+    high_output = int(high_output * 1.25)
+    low, high = low_input + low_output, high_input + high_output
+    baseline_midpoint = round_to_nice(int((low + high) / 2))
+    profile = execution_profile or {}
+    historical = history_model.predict(history_path, task_type, profile, baseline_midpoint,
+                                       instance_id=instance_id, task=task)
+    ratio = historical.p50_tokens / baseline_midpoint if historical.p50_tokens is not None else 1.0
+    if historical.calibrated:
+        low, high = historical.low_tokens, historical.high_tokens
+    elif historical.p50_tokens is not None:
+        low, high = int(low * ratio), max(int(high * ratio), historical.p90_tokens)
+    initial_tokens = prompt_low + context_tokens
+    # Estimated prompt length is not a known lower bound on actual usage.
+    # Do not shrink a calibrated interval using that approximation.
+    if not historical.calibrated:
+        low = max(initial_tokens, low)
+    high = max(initial_tokens, high)
     midpoint = int((low + high) / 2)
-    risk = risk_for(high)
-    confidence = "low" if sample_count < 3 else "medium" if sample_count < 10 else "high"
+    confidence = "unvalidated" if historical.p50_tokens is not None else "low"
     rounded_high = round_to_nice(high)
+    risk = risk_for(rounded_high)
     budget_status = budget_status_for(rounded_high, budget_tokens)
     rounded_input_low = round_to_nice(low_input)
     rounded_input_high = round_to_nice(high_input)
     rounded_output_low = round_to_nice(low_output)
     rounded_output_high = round_to_nice(high_output)
-    context_fit = context_fit_for(rounded_high, context_window)
+    context_fit = context_fit_for(peak_context_tokens, context_window)
     cost = cost_for(
         rounded_input_low,
         rounded_input_high,
@@ -462,6 +488,11 @@ def estimate(
         output_price_per_million,
         currency,
     )
+
+    if historical.p50_tokens is not None:
+        rounded_input_low = rounded_input_high = None
+        rounded_output_low = rounded_output_high = None
+        cost = None
 
     drivers = [
         f"{searches[0]}-{searches[1]} searches",
@@ -478,7 +509,7 @@ def estimate(
         complexity=complexity,
         risk=risk,
         confidence=confidence,
-        low_tokens=round_to_nice(low),
+        low_tokens=int(low) if historical.calibrated else round_to_nice(low),
         high_tokens=rounded_high,
         midpoint_tokens=round_to_nice(midpoint),
         input_low_tokens=rounded_input_low,
@@ -495,6 +526,19 @@ def estimate(
         cost=cost,
         budget_tokens=budget_tokens,
         budget_status=budget_status,
+        task_text=task, baseline_midpoint_tokens=baseline_midpoint,
+        prediction_method=historical.method,
+        p50_tokens=historical.p50_tokens, p90_tokens=historical.p90_tokens,
+        interval_method="split_conformal_90" if historical.calibrated else "heuristic_uncalibrated",
+        interval_target_coverage=historical.target_coverage,
+        fit_samples=historical.fit_samples, calibration_samples=historical.calibration_samples,
+        history_digest=historical.history_digest, execution_profile=profile,
+        instance_id=instance_id, peak_context_tokens=peak_context_tokens,
+        evidence_note=("Target 90% marginal coverage assumes exchangeable, same-configuration tasks; held-out accuracy not established."
+                       if historical.calibrated else
+                       "Uncalibrated interval. Historical P50/P90 are empirical estimates, not validated probabilities."
+                       if historical.p50_tokens is not None else
+                       "Insufficient matching fit history (need 5 independent tasks and a complete execution profile); using rough rules."),
     )
 
 
@@ -514,6 +558,9 @@ def compare_tasks(
     input_price_per_million: float | None = None,
     output_price_per_million: float | None = None,
     currency: str = "USD",
+    execution_profile: dict[str, str] | None = None,
+    peak_context_tokens: int | None = None,
+    instance_id: str | None = None,
 ) -> list[Estimate]:
     results = [
         estimate(
@@ -526,10 +573,11 @@ def compare_tasks(
             input_price_per_million,
             output_price_per_million,
             currency,
+            execution_profile=execution_profile, peak_context_tokens=peak_context_tokens, instance_id=instance_id,
         )
         for task in tasks
     ]
-    results.sort(key=lambda item: item.midpoint_tokens, reverse=True)
+    results.sort(key=lambda item: item.p50_tokens if item.p50_tokens is not None else item.midpoint_tokens, reverse=True)
     for idx, result in enumerate(results, start=1):
         result.rank = idx
     return results
@@ -544,7 +592,6 @@ def optimization_profile(mode: str) -> dict[str, object]:
             "max_files": "Inspect only the top 3-6 likely relevant files.",
             "max_commands": "Run at most 1-2 focused commands.",
             "output_cap": "Keep command output summaries under 80 lines and omit unrelated logs.",
-            "reduction": 0.45,
         },
         "balanced": {
             "label": "balanced",
@@ -553,7 +600,6 @@ def optimization_profile(mode: str) -> dict[str, object]:
             "max_files": "Inspect only files connected to the target behavior before broadening scope.",
             "max_commands": "Run focused commands before broad test or build commands.",
             "output_cap": "Summarize command output and include only actionable failure excerpts.",
-            "reduction": 0.65,
         },
         "thorough": {
             "label": "thorough",
@@ -562,7 +608,6 @@ def optimization_profile(mode: str) -> dict[str, object]:
             "max_files": "Inspect related modules, tests, and configs before implementation.",
             "max_commands": "Run necessary test/build commands, but cap repeated failures.",
             "output_cap": "Summarize logs by failure chain and avoid dumping full repeated output.",
-            "reduction": 0.82,
         },
     }
     if mode not in profiles:
@@ -682,46 +727,6 @@ def build_optimized_prompt(task: str, original: Estimate, mode: str) -> tuple[st
     return "\n".join(lines), auto_split, scope_guard, output_caps
 
 
-def scaled_estimate(base: Estimate, reduction: float) -> Estimate:
-    low_tokens = round_to_nice(int(base.low_tokens * reduction))
-    high_tokens = round_to_nice(int(base.high_tokens * reduction))
-    midpoint_tokens = round_to_nice(int(base.midpoint_tokens * reduction))
-    scaled = Estimate(
-        task_type=base.task_type,
-        complexity=max(1, int(math.ceil(base.complexity * reduction))),
-        risk=risk_for(high_tokens),
-        confidence=base.confidence,
-        low_tokens=low_tokens,
-        high_tokens=high_tokens,
-        midpoint_tokens=midpoint_tokens,
-        input_low_tokens=round_to_nice(int(base.input_low_tokens * reduction)),
-        input_high_tokens=round_to_nice(int(base.input_high_tokens * reduction)),
-        output_low_tokens=round_to_nice(int(base.output_low_tokens * reduction)),
-        output_high_tokens=round_to_nice(int(base.output_high_tokens * reduction)),
-        calibration_ratio=base.calibration_ratio,
-        repo=base.repo,
-        drivers=base.drivers,
-        recommendation=recommendation_for(risk_for(high_tokens), base.task_type, budget_status_for(high_tokens, base.budget_tokens)),
-        split_plan=split_plan_for(risk_for(high_tokens), base.task_type),
-        context_window=base.context_window,
-        context_fit=context_fit_for(high_tokens, base.context_window),
-        cost=cost_for(
-            round_to_nice(int(base.input_low_tokens * reduction)),
-            round_to_nice(int(base.input_high_tokens * reduction)),
-            round_to_nice(int(base.output_low_tokens * reduction)),
-            round_to_nice(int(base.output_high_tokens * reduction)),
-            None,
-            None,
-            "USD",
-        ),
-        budget_tokens=base.budget_tokens,
-        budget_status=budget_status_for(high_tokens, base.budget_tokens),
-    )
-    if base.cost is not None:
-        scaled.cost = CostEstimate(round(base.cost.low * reduction, 4), round(base.cost.high * reduction, 4), base.cost.currency)
-    return scaled
-
-
 def optimize_task(
     task: str,
     cwd: str,
@@ -733,6 +738,9 @@ def optimize_task(
     output_price_per_million: float | None = None,
     currency: str = "USD",
     mode: str | None = None,
+    execution_profile: dict[str, str] | None = None,
+    peak_context_tokens: int | None = None,
+    instance_id: str | None = None,
 ) -> PromptOptimization:
     original = estimate(
         task,
@@ -744,14 +752,12 @@ def optimize_task(
         input_price_per_million,
         output_price_per_million,
         currency,
+        execution_profile=execution_profile, peak_context_tokens=peak_context_tokens, instance_id=instance_id,
     )
     chosen_mode = choose_mode(mode, original)
     optimized_prompt, auto_split, scope_guard, output_caps = build_optimized_prompt(task, original, chosen_mode)
-    reduction = float(optimization_profile(chosen_mode)["reduction"])
-    optimized = scaled_estimate(original, reduction)
-    saved_low = max(0, original.low_tokens - optimized.low_tokens)
-    saved_high = max(0, original.high_tokens - optimized.high_tokens)
-    savings_summary = f"Estimated reduction: {saved_low}-{saved_high} tokens by narrowing scope, capping output, and staging execution."
+    optimized = original
+    savings_summary = "Savings not measured; the suggested prompt does not change the forecast until independently validated."
     return PromptOptimization(
         mode=chosen_mode,
         original_task=task,
@@ -781,7 +787,7 @@ def assess_roi(forecast: Estimate) -> ROIAssessment:
     }
     risk_penalty = {"low": 0, "medium": 12, "high": 28, "extreme": 45}[forecast.risk]
     budget_penalty = {"within_budget": 0, "near_budget": 10, "over_budget": 25, None: 0}[forecast.budget_status]
-    context_penalty = {"fits": 0, "tight": 12, "likely_exceeds": 25, None: 0}[forecast.context_fit]
+    context_penalty = {"fits": 0, "tight": 12, "likely_exceeds": 25, "unknown": 0, None: 0}[forecast.context_fit]
     value = value_by_type.get(forecast.task_type, 50)
     score = max(1, min(100, value - risk_penalty - budget_penalty - context_penalty + min(10, forecast.complexity)))
 
@@ -930,6 +936,9 @@ def build_preflight_controller(
     output_price_per_million: float | None = None,
     currency: str = "USD",
     mode: str | None = None,
+    execution_profile: dict[str, str] | None = None,
+    peak_context_tokens: int | None = None,
+    instance_id: str | None = None,
 ) -> PreflightController:
     forecast = estimate(
         task,
@@ -941,6 +950,7 @@ def build_preflight_controller(
         input_price_per_million,
         output_price_per_million,
         currency,
+        execution_profile=execution_profile, peak_context_tokens=peak_context_tokens, instance_id=instance_id,
     )
     roi = assess_roi(forecast)
     contract_mode = choose_contract_mode(mode, forecast, roi)
@@ -958,16 +968,21 @@ def render_markdown(result: Estimate) -> str:
         f"- Estimate: {low}-{high} tokens",
         f"- Risk: {result.risk}",
         f"- Confidence: {result.confidence}",
+        f"- Method: {result.prediction_method}; interval: {result.interval_method}",
+        f"- Matching tasks: {result.fit_samples} fit / {result.calibration_samples} calibration",
+        f"- Evidence: {result.evidence_note}",
         f"- Task type: {result.task_type}",
         f"- Complexity: {result.complexity}/10",
-        f"- Input tokens: {result.input_low_tokens}-{result.input_high_tokens}",
-        f"- Output tokens: {result.output_low_tokens}-{result.output_high_tokens}",
+        f"- Input tokens: {result.input_low_tokens}-{result.input_high_tokens}" if result.input_low_tokens is not None else "- Input tokens: unknown after total-only historical calibration",
+        f"- Output tokens: {result.output_low_tokens}-{result.output_high_tokens}" if result.output_low_tokens is not None else "- Output tokens: unknown after total-only historical calibration",
         f"- Repo signals: {result.repo.repo_size}, {result.repo.code_file_count} code files, {result.repo.test_file_count} test-like files",
         f"- Main drivers: {', '.join(result.drivers)}",
         f"- Recommendation: {result.recommendation}",
     ]
+    if result.p50_tokens is not None:
+        lines.append(f"- Historical P50/P90: {result.p50_tokens}/{result.p90_tokens} tokens (empirical)")
     if result.context_window is not None:
-        lines.append(f"- Context fit: {result.context_fit} against {result.context_window} tokens")
+        lines.append(f"- Peak context fit: {result.context_fit} against {result.context_window} tokens (separate from cumulative usage)")
     if result.cost is not None:
         lines.append(f"- Cost estimate: {result.cost.currency} {result.cost.low}-{result.cost.high}")
     if result.budget_tokens is not None:
@@ -980,12 +995,12 @@ def render_markdown(result: Estimate) -> str:
 
 
 def render_compare_markdown(results: list[Estimate]) -> str:
-    lines = ["**Token Budget Comparison**", "", "| Rank | Estimate | Risk | Type | Recommendation |", "|---:|---:|---|---|---|"]
+    lines = ["**Token Budget Comparison**", "", "| Rank | Estimate | P50 | Interval method | Risk | Type | Recommendation |", "|---:|---|---|---|---|---|---|"]
     for result in results:
         low = f"{result.low_tokens // 1000}k" if result.low_tokens >= 1000 else str(result.low_tokens)
         high = f"{result.high_tokens // 1000}k" if result.high_tokens >= 1000 else str(result.high_tokens)
         lines.append(
-            f"| {result.rank} | {low}-{high} | {result.risk} | {result.task_type} | {result.recommendation} |"
+            f"| {result.rank} | {low}-{high} | {result.p50_tokens if result.p50_tokens is not None else 'unknown'} | {result.interval_method} | {result.risk} | {result.task_type} | {result.recommendation} |"
         )
     return "\n".join(lines)
 
@@ -999,7 +1014,7 @@ def render_optimization_markdown(result: PromptOptimization) -> str:
         "**Budget-Aware Prompt Optimization**",
         f"- Mode: {result.mode}",
         f"- Original estimate: {original_low}-{original_high} tokens",
-        f"- Optimized estimate: {optimized_low}-{optimized_high} tokens",
+        f"- Forecast retained pending measurement: {optimized_low}-{optimized_high} tokens",
         f"- Original risk: {result.original_estimate.risk}",
         f"- Optimized risk: {result.optimized_estimate.risk}",
         f"- Savings: {result.savings_summary}",
@@ -1019,6 +1034,9 @@ def render_controller_markdown(result: PreflightController) -> str:
         "",
         "## Token Forecast",
         f"- Estimate: {forecast_low}-{forecast_high} tokens",
+        f"- Method: {result.forecast.prediction_method}; interval: {result.forecast.interval_method}",
+        f"- Evidence: {result.forecast.evidence_note}",
+        f"- Historical P50/P90: {result.forecast.p50_tokens}/{result.forecast.p90_tokens}",
         f"- Risk: {result.forecast.risk}",
         f"- Task type: {result.forecast.task_type}",
         f"- Main drivers: {', '.join(result.forecast.drivers)}",
@@ -1059,17 +1077,59 @@ def render_controller_markdown(result: PreflightController) -> str:
 
 
 def record(history_path: Path, args: argparse.Namespace) -> None:
+    if not history_model.positive_number(args.actual_tokens):
+        raise ValueError("actual tokens must be a positive finite integer")
+    if args.prediction_file is not None:
+        prediction = json.loads(args.prediction_file.read_text(encoding="utf-8"))
+        if not isinstance(prediction, dict) or prediction.get("baseline_version") != history_model.BASELINE_VERSION:
+            raise ValueError("prediction file must be a current-version estimate JSON")
+        profile = prediction.get("execution_profile")
+        if not isinstance(profile, dict) or not all(isinstance(profile.get(k), str) and profile[k].strip()
+                                                   for k in history_model.PROFILE_KEYS):
+            raise ValueError("prediction file needs model, agent and execution-config")
+        for key in history_model.PROFILE_KEYS:
+            value = getattr(args, key)
+            if value is not None and value != profile[key]:
+                raise ValueError("record configuration must match the frozen prediction")
+        identity = args.instance_id or prediction.get("instance_id")
+        if not isinstance(identity, str) or not identity.strip():
+            raise ValueError("record requires a stable --instance-id")
+        if prediction.get("instance_id") and identity != prediction["instance_id"]:
+            raise ValueError("instance ID must match the frozen prediction")
+        baseline = prediction.get("baseline_midpoint_tokens")
+        if not history_model.positive_number(baseline):
+            raise ValueError("prediction file needs a positive raw baseline")
+        task, task_type = prediction.get("task_text"), prediction.get("task_type")
+        if not isinstance(task, str) or not task.strip() or task_type not in TASK_PROFILES:
+            raise ValueError("prediction file needs task_text and a known task_type")
+        if args.task is not None and args.task != task:
+            raise ValueError("record task must match the frozen prediction")
+        if args.task_type is not None and args.task_type != task_type:
+            raise ValueError("record task type must match the frozen prediction")
+        row = {
+            "schema_version": 2, "baseline_version": history_model.BASELINE_VERSION,
+            "instance_id": identity, "task": task, "task_type": task_type,
+            "execution_profile": profile, "baseline_midpoint_tokens": baseline,
+            "actual_tokens": args.actual_tokens, "split": args.split, "outcome": args.outcome,
+            "prediction": prediction,
+        }
+    else:
+        required = [args.task, args.task_type, args.predicted_low, args.predicted_high, args.predicted_midpoint]
+        if any(v is None for v in required):
+            raise ValueError("use --prediction-file, or supply all legacy task/predicted flags")
+        if not all(history_model.positive_number(v) for v in required[2:]):
+            raise ValueError("legacy predicted token values must be positive")
+        if not args.predicted_low <= args.predicted_midpoint <= args.predicted_high:
+            raise ValueError("legacy prediction must satisfy low <= midpoint <= high")
+        row = {
+            "schema_version": 1, "task": args.task, "task_type": args.task_type,
+            "predicted_low_tokens": args.predicted_low, "predicted_high_tokens": args.predicted_high,
+            "predicted_midpoint_tokens": args.predicted_midpoint, "actual_tokens": args.actual_tokens,
+        }
+    row["recorded_at"] = datetime.now(timezone.utc).isoformat()
     history_path.parent.mkdir(parents=True, exist_ok=True)
-    row = {
-        "task": args.task,
-        "task_type": args.task_type,
-        "predicted_low_tokens": args.predicted_low,
-        "predicted_high_tokens": args.predicted_high,
-        "predicted_midpoint_tokens": args.predicted_midpoint,
-        "actual_tokens": args.actual_tokens,
-    }
     with history_path.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        f.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 def default_history_path() -> Path:
@@ -1151,13 +1211,25 @@ def build_parser() -> argparse.ArgumentParser:
     control_parser.add_argument("--json", action="store_true")
 
     record_parser = sub.add_parser("record")
-    record_parser.add_argument("--task", required=True)
-    record_parser.add_argument("--task-type", required=True)
-    record_parser.add_argument("--predicted-low", type=int, required=True)
-    record_parser.add_argument("--predicted-high", type=int, required=True)
-    record_parser.add_argument("--predicted-midpoint", type=int, required=True)
+    record_parser.add_argument("--task")
+    record_parser.add_argument("--task-type")
+    record_parser.add_argument("--predicted-low", type=int)
+    record_parser.add_argument("--predicted-high", type=int)
+    record_parser.add_argument("--predicted-midpoint", type=int)
     record_parser.add_argument("--actual-tokens", type=int, required=True)
     record_parser.add_argument("--history", type=Path, default=default_history_path())
+
+    for command_parser in [estimate_parser, compare_parser, optimize_parser, control_parser, record_parser]:
+        command_parser.add_argument("--model", default=None, help="Exact model/version for history matching.")
+        command_parser.add_argument("--agent", default=None, help="Execution harness and version.")
+        command_parser.add_argument("--execution-config", default=None, help="Versioned reasoning/context/tool configuration ID.")
+        command_parser.add_argument("--instance-id", default=None, help="Stable task ID; excludes this task from history fitting.")
+    for command_parser in [estimate_parser, compare_parser, optimize_parser, control_parser]:
+        command_parser.add_argument("--peak-context-tokens", type=int, default=None,
+                                    help="Separately supplied peak single-request context estimate.")
+    record_parser.add_argument("--prediction-file", type=Path, help="Frozen JSON from estimate; recommended for v2 history.")
+    record_parser.add_argument("--split", choices=["auto", "fit", "calibration", "test"], default="auto")
+    record_parser.add_argument("--outcome", choices=["completed", "failed", "capped", "environment_error"], default="completed")
 
     return parser
 
@@ -1168,6 +1240,9 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     if args.command == "estimate":
         config = load_project_config(args.cwd)
+        profile = {"model": option_value(args.model, config.model),
+                   "agent": option_value(args.agent, config.agent),
+                   "execution_config": option_value(args.execution_config, config.execution_config)}
         result = estimate(
             args.task,
             args.cwd,
@@ -1178,6 +1253,8 @@ def main(argv: Iterable[str] | None = None) -> int:
             option_value(args.input_price_per_million, config.input_price_per_million),
             option_value(args.output_price_per_million, config.output_price_per_million),
             str(option_value(args.currency, config.currency, "USD")),
+            execution_profile=profile, peak_context_tokens=option_value(args.peak_context_tokens, config.peak_context_tokens),
+            instance_id=args.instance_id,
         )
         if args.json:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
@@ -1187,6 +1264,9 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     if args.command == "compare":
         config = load_project_config(args.cwd)
+        profile = {"model": option_value(args.model, config.model),
+                   "agent": option_value(args.agent, config.agent),
+                   "execution_config": option_value(args.execution_config, config.execution_config)}
         tasks = load_tasks_from_args(args.task, args.tasks_file)
         results = compare_tasks(
             tasks,
@@ -1198,6 +1278,8 @@ def main(argv: Iterable[str] | None = None) -> int:
             option_value(args.input_price_per_million, config.input_price_per_million),
             option_value(args.output_price_per_million, config.output_price_per_million),
             str(option_value(args.currency, config.currency, "USD")),
+            execution_profile=profile, peak_context_tokens=option_value(args.peak_context_tokens, config.peak_context_tokens),
+            instance_id=args.instance_id,
         )
         if args.json:
             print(json.dumps([asdict(result) for result in results], ensure_ascii=False, indent=2))
@@ -1207,6 +1289,9 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     if args.command == "optimize":
         config = load_project_config(args.cwd)
+        profile = {"model": option_value(args.model, config.model),
+                   "agent": option_value(args.agent, config.agent),
+                   "execution_config": option_value(args.execution_config, config.execution_config)}
         result = optimize_task(
             args.task,
             args.cwd,
@@ -1218,6 +1303,8 @@ def main(argv: Iterable[str] | None = None) -> int:
             option_value(args.output_price_per_million, config.output_price_per_million),
             str(option_value(args.currency, config.currency, "USD")),
             args.mode,
+            execution_profile=profile, peak_context_tokens=option_value(args.peak_context_tokens, config.peak_context_tokens),
+            instance_id=args.instance_id,
         )
         if args.json:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
@@ -1227,6 +1314,9 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     if args.command == "control":
         config = load_project_config(args.cwd)
+        profile = {"model": option_value(args.model, config.model),
+                   "agent": option_value(args.agent, config.agent),
+                   "execution_config": option_value(args.execution_config, config.execution_config)}
         result = build_preflight_controller(
             args.task,
             args.cwd,
@@ -1238,6 +1328,8 @@ def main(argv: Iterable[str] | None = None) -> int:
             option_value(args.output_price_per_million, config.output_price_per_million),
             str(option_value(args.currency, config.currency, "USD")),
             args.mode,
+            execution_profile=profile, peak_context_tokens=option_value(args.peak_context_tokens, config.peak_context_tokens),
+            instance_id=args.instance_id,
         )
         if args.json:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
@@ -1246,7 +1338,10 @@ def main(argv: Iterable[str] | None = None) -> int:
         return 0
 
     if args.command == "record":
-        record(args.history, args)
+        try:
+            record(args.history, args)
+        except (ValueError, KeyError, TypeError) as exc:
+            parser.error(str(exc))
         print(f"Recorded token budget sample to {args.history}")
         return 0
 

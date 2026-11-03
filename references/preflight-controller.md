@@ -1,6 +1,6 @@
 # Preflight Controller
 
-The preflight controller turns token estimation into an execution-control report.
+The preflight controller turns token estimation into an pre-execution advisory report.
 
 Use it when the user wants Codex to:
 
@@ -8,7 +8,9 @@ Use it when the user wants Codex to:
 - decide whether the task is worth executing now,
 - generate an explicit budget contract,
 - plan the smallest useful context set,
-- and start with the lowest-token path that still has high expected value.
+- and suggest a bounded first pass.
+
+ROI scores are hand-set policy heuristics, not measured economic returns. Contracts do not enforce runtime limits. Forecast interpretation follows [the preflight method](preflight-method.md).
 
 ## Modules
 
