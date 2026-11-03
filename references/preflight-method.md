@@ -1,6 +1,49 @@
-# Pure-preflight forecasting method
+# Adaptive pure-preflight model
 
-## Scope
+Only pre-execution information is used. The prediction does not execute a solver, inspect a running trajectory or call an LLM. Post-run outcomes are labels for future tasks. The default predictor is `adaptive`; the former ratio method is retained under `legacy` for reproducible comparisons.
+
+## Features and point model
+
+Feature schema `preflight-counts-v1` contains log(1 + task characters), log(1 + line breaks), log(1 + code files), log(1 + test files), a repository-known indicator, log(1 + declared initial context), log(1 + path mentions), and log(1 + error-word mentions). File counts must refer to the target base commit. Initial request length is a declared pre-generation feature, not usage returned after generating a response. No future call count, test outcome, patch or actual total is a feature.
+
+History is pooled across task types only within the exact model/harness/configuration and raw baseline version. ID/text groups are excluded and deduplicated before fitting. For type k with n_k fit records, the hierarchical log point is:
+
+```text
+w = n_k / (n_k + 10)
+log point = w * log(type median actual) + (1-w) * log(configuration median actual)
+```
+
+If the type is absent, use the configuration median. At least five fit tasks are needed. Records without supported feature snapshots still support the hierarchy.
+
+The ridge candidate uses standardized features and log(total tokens) targets. Feature means/scales use fitting data only; the fixed L2 penalty is 10. An unpenalized intercept is adjusted by the training median log residual. Standardized query values are clipped to [-5, 5] as a fixed numerical extrapolation guard. The exponentiated point is a median proxy under modeling assumptions, not a proven conditional median.
+
+For automatic selection, a stable task-ID hash reserves one fifth of supported fit records for validation. Require twenty supported training records and five validation records. Ridge is selected only if its validation MAE is less than 95% of BOTH the hierarchical and configuration-median MAE. Otherwise retain hierarchy. Refit a winning ridge on all supported fitting rows; calibration and final test records never select it. Explicit model overrides are diagnostics and must not be chosen using final test results.
+
+## One-sided budget calibration
+
+For the fixed selected point function p(x), use independent calibration scores `s_i = log(actual_i) - log(p(x_i))`. Select rank `ceil((n_cal + 1) * 0.90)`. Require nineteen calibration tasks; if the rank is unavailable, abstain from a calibrated upper. The budget is `ceil(exp(log(p(x)) + max(0, kth score)))`, rounded outward by the CLI. It is also conservatively extended when the declared initial request estimate is larger.
+
+This is one-sided calibration: the event is `actual <= budget_upper`, with a 90% marginal target under exchangeability. It is not a central 90% interval, a per-task guarantee or a claim of empirical accuracy. `low_tokens=0` is a nonnegative support endpoint, not a learned lower quantile. Compare empirical upper coverage and excess budget on held-out tasks. For a ridge, calibration rows need compatible feature snapshots; missing-feature calibration cannot validate a feature-bearing model.
+
+Without calibration, the high scenario uses the fit empirical P90 extended to at least the point, labeled `one_sided_uncalibrated`; the separate calibrated budget field remains null. The point field `p50_tokens` is retained for compatibility but `point_semantics` explicitly says median proxy. Legacy ratio P90 remains available only in legacy mode.
+
+## Data boundaries and evaluation
+
+Schema-v2 records preserve versioned feature snapshots and frozen predictions. Exact profile identity, task grouping, natural-termination filtering and held-out test exclusion apply configuration-wide. Completed successes and confirmed natural solver failures are eligible; caps and infrastructure failures are excluded. An unresolved benchmark label alone does not prove natural termination.
+
+Point quality, single-sided coverage, and budget excess must be evaluated separately. The second offline experiment reserves the previously unused second 250 source tasks for final evaluation; the original 29 test tasks remain diagnostic only. No tuning follows inspection of this final test. Source selection still restricts the population to successful historical runs until failure termination can be established.
+
+Run `experiments/evaluate_swe_preflight.py --data-dir <sanitized-data> --output-dir <results>` to reproduce this bounded experiment. It is not the official SWE-bench patch evaluator. Data/source hashes and frozen predictions are saved before scoring.
+
+## Paper attribution
+
+CQR motivates independent calibration, but this implementation does NOT implement learned conditional quantile regression. TokenCast motivates distinguishing task-start from online forecasts; no online architecture is copied. Log ridge, hierarchy, validation selection and the one-sided budget interface are this repository's implementation choices. Related sources and the prior comparator are documented below.
+
+---
+
+# Legacy ratio comparator (`--predictor legacy`)
+
+## Legacy scope
 
 Prediction inputs exist before the solver starts: task text, local repository counts, known initial context, model/version, harness/version and execution configuration. No trajectory prefixes, tool outcomes, hidden tests, gold patches or solver calls are prediction inputs. Historical outcomes are labels for later tasks.
 

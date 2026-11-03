@@ -55,7 +55,19 @@ def task_key(task: str) -> str:
     return hashlib.sha256(' '.join(task.split()).encode('utf-8')).hexdigest()
 
 
-def predict(history_path: Path, task_type: str, profile: dict[str, str],
+def predict(history_path: Path, task_type: str, profile: dict[str, str], baseline: int,
+            *, instance_id: str | None = None, task: str = '', features: dict | None = None,
+            strategy: str = 'adaptive', point_model: str = 'auto') -> HistoricalForecast:
+    if strategy == 'legacy':
+        return predict_legacy(history_path, task_type, profile, baseline, instance_id=instance_id, task=task)
+    if strategy != 'adaptive':
+        raise ValueError('predictor must be adaptive or legacy')
+    from preflight_model import predict as adaptive_predict
+    return adaptive_predict(history_path, task_type, profile, baseline, instance_id=instance_id,
+                            task=task, features=features, point_model=point_model)
+
+
+def predict_legacy(history_path: Path, task_type: str, profile: dict[str, str],
             baseline: int, *, instance_id: str | None = None,
             task: str = '') -> HistoricalForecast:
     """Forecast only from prior v2 records; test/current instances never fit.
@@ -146,3 +158,76 @@ def predict(history_path: Path, task_type: str, profile: dict[str, str],
                   target_coverage=0.9, low_tokens=math.floor(max(0, lower - radius) * baseline),
                   high_tokens=math.ceil((upper + radius) * baseline))
     return HistoricalForecast(**result)
+
+
+def eligible_records(history_path: Path, profile: dict[str, str], *,
+                     instance_id: str | None = None, task: str = '') -> tuple[list[dict], list[dict], str | None]:
+    """Configuration-wide records; partition and exclusion use linked tasks."""
+    if not all(isinstance(profile.get(k), str) and profile[k].strip() for k in PROFILE_KEYS):
+        return [], [], None
+    if not history_path.exists():
+        return [], [], None
+    rows = []
+    for line in history_path.read_text(encoding='utf-8').splitlines():
+        try:
+            row = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if not isinstance(row, dict):
+            continue
+        if (row.get('schema_version') == 2
+                and row.get('baseline_version') == BASELINE_VERSION
+                and isinstance(row.get('task_type'), str) and row['task_type'].strip()
+                and row.get('execution_profile') == profile
+                and isinstance(row.get('instance_id'), str) and row['instance_id'].strip()
+                and isinstance(row.get('task'), str) and row['task'].strip()
+                and isinstance(row.get('split'), str)
+                and row.get('split') in {'auto', 'fit', 'calibration', 'test'}):
+            rows.append(row)
+    # Connect ID aliases and exact normalized text transitively. Grouping
+    # precedes exclusions so a test alias also excludes its paraphrased rows.
+    parents: dict[str, str] = {}
+
+    def find(key: str) -> str:
+        parents.setdefault(key, key)
+        while parents[key] != key:
+            parents[key] = parents[parents[key]]
+            key = parents[key]
+        return key
+
+    for row in rows:
+        left = find('id:' + row['instance_id'])
+        right = find('text:' + task_key(row['task']))
+        parents[max(left, right)] = min(left, right)
+    excluded_groups = {find('id:' + r['instance_id']) for r in rows if r['split'] == 'test'}
+    if instance_id is not None and 'id:' + instance_id in parents:
+        excluded_groups.add(find('id:' + instance_id))
+    if task and 'text:' + task_key(task) in parents:
+        excluded_groups.add(find('text:' + task_key(task)))
+    fit, calibration = [], []
+    seen = set()
+    used = []
+    for row in rows:
+        identity = find('id:' + row['instance_id'])
+        if identity in seen or identity in excluded_groups:
+            continue
+        if not isinstance(row.get('outcome'), str) or row['outcome'] not in {'completed', 'failed'}:
+            continue
+        actual, raw = row.get('actual_tokens'), row.get('baseline_midpoint_tokens')
+        if not positive_number(actual) or not positive_number(raw):
+            continue
+        ratio = actual / raw
+        if not math.isfinite(ratio) or ratio <= 0:
+            continue
+        seen.add(identity)
+        split = row['split']
+        if split == 'auto':
+            split = 'fit' if int(task_key(identity), 16) % 2 == 0 else 'calibration'
+        (fit if split == 'fit' else calibration).append(dict(row, split=split))
+        snapshot = row.get('feature_snapshot')
+        if snapshot is None and isinstance(row.get('prediction'), dict):
+            snapshot = row['prediction'].get('feature_snapshot')
+        used.append((identity, split, actual, raw, row['task_type'],
+                     hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()))
+    digest = hashlib.sha256(json.dumps(sorted(used)).encode('utf-8')).hexdigest()
+    return fit, calibration, digest

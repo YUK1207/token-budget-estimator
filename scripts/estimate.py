@@ -14,8 +14,10 @@ from pathlib import Path
 from typing import Iterable
 
 import history_model
+import preflight_model
 
 TASK_PROFILES = {
+    "code_repair": {"complexity": 4, "searches": (5, 14), "files": (6, 20), "commands": (2, 6), "failures": (1, 4)},
     "simple_question": {"complexity": 1, "searches": (0, 1), "files": (0, 1), "commands": (0, 0), "failures": (0, 0)},
     "code_explanation": {"complexity": 2, "searches": (2, 6), "files": (2, 8), "commands": (0, 1), "failures": (0, 0)},
     "small_code_change": {"complexity": 3, "searches": (3, 8), "files": (3, 10), "commands": (1, 3), "failures": (0, 1)},
@@ -58,6 +60,9 @@ class ProjectConfig:
     agent: str | None = None
     execution_config: str | None = None
     peak_context_tokens: int | None = None
+    task_kind: str = "auto"
+    predictor: str = "adaptive"
+    point_model: str = "auto"
 
 
 @dataclass
@@ -100,6 +105,13 @@ class Estimate:
     instance_id: str | None = None
     peak_context_tokens: int | None = None
     evidence_note: str = "Rule-based rough estimate; no calibrated coverage."
+
+    feature_snapshot: dict | None = None
+    point_method: str = "heuristic"
+    point_semantics: str = "uncalibrated_median_proxy"
+    budget_upper_tokens: int | None = None
+    budget_target_coverage: float | None = None
+    model_selection: str | None = None
 
 
 @dataclass
@@ -186,6 +198,8 @@ def load_project_config(cwd: str | Path) -> ProjectConfig:
             model=data.get("model"), agent=data.get("agent"),
             execution_config=data.get("execution_config"),
             peak_context_tokens=_optional_int(data.get("peak_context_tokens")),
+            task_kind=str(data.get("task_kind", "auto")), predictor=str(data.get("predictor", "adaptive")),
+            point_model=str(data.get("point_model", "auto")),
         )
     return ProjectConfig()
 
@@ -222,7 +236,7 @@ def collect_repo_signals(cwd: str, max_files: int = 12000) -> RepoSignals:
             file_count += 1
             path = Path(dirpath) / filename
             suffix = path.suffix.lower()
-            lowered = str(path).lower()
+            lowered = str(path.relative_to(root)).lower()
             if suffix in CODE_EXTENSIONS:
                 code_file_count += 1
             if "test" in lowered or "spec" in lowered:
@@ -252,7 +266,24 @@ def contains_term(text: str, term: str) -> bool:
     return term in text
 
 
-def classify_task(task: str) -> str:
+def load_repo_signals(path: Path) -> RepoSignals:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    fields = ["file_count", "code_file_count", "test_file_count", "config_file_count"]
+    if not isinstance(data, dict) or not all(isinstance(data.get(k), int) and not isinstance(data[k], bool)
+                                           and data[k] >= 0 for k in fields):
+        raise ValueError("repository counts must be nonnegative integers")
+    if any(data[k] > data["file_count"] for k in fields[1:]):
+        raise ValueError("component counts cannot exceed total file count")
+    count = data["code_file_count"]
+    size = "small" if count < 50 else "medium" if count < 500 else "large" if count < 2000 else "very_large"
+    return RepoSignals(*(data[k] for k in fields), repo_size=size)
+
+
+def classify_task(task: str, task_kind: str = "auto") -> str:
+    if task_kind == "code_repair":
+        return "code_repair"
+    if task_kind != "auto":
+        raise ValueError("task kind must be auto or code_repair")
     t = task.lower()
     has_git_publish = any(contains_term(t, w) for w in [
         "upload to github", "publish to github", "push to github", "create github repo",
@@ -402,9 +433,15 @@ def estimate(
     execution_profile: dict[str, str] | None = None,
     peak_context_tokens: int | None = None,
     instance_id: str | None = None,
+    task_kind: str = "auto",
+    predictor: str = "adaptive",
+    point_model: str = "auto",
+    repo_signals: RepoSignals | None = None,
 ) -> Estimate:
-    repo = collect_repo_signals(cwd)
-    task_type = classify_task(task)
+    if context_tokens < 0:
+        raise ValueError("initial context must be nonnegative")
+    repo = repo_signals if repo_signals is not None else collect_repo_signals(cwd)
+    task_type = classify_task(task, task_kind)
     profile = dict(TASK_PROFILES[task_type])
     complexity = int(profile["complexity"])
 
@@ -456,17 +493,23 @@ def estimate(
     low, high = low_input + low_output, high_input + high_output
     baseline_midpoint = round_to_nice(int((low + high) / 2))
     profile = execution_profile or {}
+    features = preflight_model.feature_snapshot(task, repo.file_count, repo.code_file_count,
+                                                repo.test_file_count, repo.repo_size != "unknown", context_tokens)
     historical = history_model.predict(history_path, task_type, profile, baseline_midpoint,
-                                       instance_id=instance_id, task=task)
+                                       instance_id=instance_id, task=task, features=features,
+                                       strategy=predictor, point_model=point_model)
     ratio = historical.p50_tokens / baseline_midpoint if historical.p50_tokens is not None else 1.0
     if historical.calibrated:
         low, high = historical.low_tokens, historical.high_tokens
     elif historical.p50_tokens is not None:
-        low, high = int(low * ratio), max(int(high * ratio), historical.p90_tokens)
+        if getattr(historical, "interval_method", "").startswith("one_sided"):
+            low, high = 0, historical.high_tokens
+        else:
+            low, high = int(low * ratio), max(int(high * ratio), historical.p90_tokens or 0)
     initial_tokens = prompt_low + context_tokens
     # Estimated prompt length is not a known lower bound on actual usage.
     # Do not shrink a calibrated interval using that approximation.
-    if not historical.calibrated:
+    if not historical.calibrated and not getattr(historical, "interval_method", "").startswith("one_sided"):
         low = max(initial_tokens, low)
     high = max(initial_tokens, high)
     midpoint = int((low + high) / 2)
@@ -529,14 +572,18 @@ def estimate(
         task_text=task, baseline_midpoint_tokens=baseline_midpoint,
         prediction_method=historical.method,
         p50_tokens=historical.p50_tokens, p90_tokens=historical.p90_tokens,
-        interval_method="split_conformal_90" if historical.calibrated else "heuristic_uncalibrated",
+        interval_method=getattr(historical, "interval_method", "split_conformal_90" if historical.calibrated else "heuristic_uncalibrated"),
         interval_target_coverage=historical.target_coverage,
         fit_samples=historical.fit_samples, calibration_samples=historical.calibration_samples,
         history_digest=historical.history_digest, execution_profile=profile,
         instance_id=instance_id, peak_context_tokens=peak_context_tokens,
-        evidence_note=("Target 90% marginal coverage assumes exchangeable, same-configuration tasks; held-out accuracy not established."
+        feature_snapshot=features, point_method=getattr(historical, "point_method", historical.method),
+        budget_upper_tokens=rounded_high if getattr(historical, "budget_upper_tokens", None) is not None else None,
+        budget_target_coverage=historical.target_coverage if getattr(historical, "budget_upper_tokens", None) is not None else None,
+        model_selection=getattr(historical, "selection", None),
+        evidence_note=("Target 90% marginal coverage assumes exchangeable, same-configuration tasks. One-sided budget coverage is not central interval coverage; point accuracy is unvalidated."
                        if historical.calibrated else
-                       "Uncalibrated interval. Historical P50/P90 are empirical estimates, not validated probabilities."
+                       "Uncalibrated scenario bound. The point is a median proxy, not a validated quantile or success probability."
                        if historical.p50_tokens is not None else
                        "Insufficient matching fit history (need 5 independent tasks and a complete execution profile); using rough rules."),
     )
@@ -561,6 +608,10 @@ def compare_tasks(
     execution_profile: dict[str, str] | None = None,
     peak_context_tokens: int | None = None,
     instance_id: str | None = None,
+    task_kind: str = "auto",
+    predictor: str = "adaptive",
+    point_model: str = "auto",
+    repo_signals: RepoSignals | None = None,
 ) -> list[Estimate]:
     results = [
         estimate(
@@ -574,6 +625,7 @@ def compare_tasks(
             output_price_per_million,
             currency,
             execution_profile=execution_profile, peak_context_tokens=peak_context_tokens, instance_id=instance_id,
+            task_kind=task_kind, predictor=predictor, point_model=point_model, repo_signals=repo_signals,
         )
         for task in tasks
     ]
@@ -741,6 +793,10 @@ def optimize_task(
     execution_profile: dict[str, str] | None = None,
     peak_context_tokens: int | None = None,
     instance_id: str | None = None,
+    task_kind: str = "auto",
+    predictor: str = "adaptive",
+    point_model: str = "auto",
+    repo_signals: RepoSignals | None = None,
 ) -> PromptOptimization:
     original = estimate(
         task,
@@ -753,6 +809,7 @@ def optimize_task(
         output_price_per_million,
         currency,
         execution_profile=execution_profile, peak_context_tokens=peak_context_tokens, instance_id=instance_id,
+            task_kind=task_kind, predictor=predictor, point_model=point_model, repo_signals=repo_signals,
     )
     chosen_mode = choose_mode(mode, original)
     optimized_prompt, auto_split, scope_guard, output_caps = build_optimized_prompt(task, original, chosen_mode)
@@ -939,6 +996,10 @@ def build_preflight_controller(
     execution_profile: dict[str, str] | None = None,
     peak_context_tokens: int | None = None,
     instance_id: str | None = None,
+    task_kind: str = "auto",
+    predictor: str = "adaptive",
+    point_model: str = "auto",
+    repo_signals: RepoSignals | None = None,
 ) -> PreflightController:
     forecast = estimate(
         task,
@@ -951,6 +1012,7 @@ def build_preflight_controller(
         output_price_per_million,
         currency,
         execution_profile=execution_profile, peak_context_tokens=peak_context_tokens, instance_id=instance_id,
+            task_kind=task_kind, predictor=predictor, point_model=point_model, repo_signals=repo_signals,
     )
     roi = assess_roi(forecast)
     contract_mode = choose_contract_mode(mode, forecast, roi)
@@ -970,6 +1032,7 @@ def render_markdown(result: Estimate) -> str:
         f"- Confidence: {result.confidence}",
         f"- Method: {result.prediction_method}; interval: {result.interval_method}",
         f"- Matching tasks: {result.fit_samples} fit / {result.calibration_samples} calibration",
+        f"- Point model: {result.point_method}; selection: {result.model_selection}",
         f"- Evidence: {result.evidence_note}",
         f"- Task type: {result.task_type}",
         f"- Complexity: {result.complexity}/10",
@@ -980,7 +1043,9 @@ def render_markdown(result: Estimate) -> str:
         f"- Recommendation: {result.recommendation}",
     ]
     if result.p50_tokens is not None:
-        lines.append(f"- Historical P50/P90: {result.p50_tokens}/{result.p90_tokens} tokens (empirical)")
+        lines.append(f"- Median proxy: {result.p50_tokens} tokens; historical P90: {result.p90_tokens}")
+    if result.budget_upper_tokens is not None:
+        lines.append(f"- One-sided budget upper: {result.budget_upper_tokens} tokens (90% marginal target under assumptions)")
     if result.context_window is not None:
         lines.append(f"- Peak context fit: {result.context_fit} against {result.context_window} tokens (separate from cumulative usage)")
     if result.cost is not None:
@@ -1036,7 +1101,7 @@ def render_controller_markdown(result: PreflightController) -> str:
         f"- Estimate: {forecast_low}-{forecast_high} tokens",
         f"- Method: {result.forecast.prediction_method}; interval: {result.forecast.interval_method}",
         f"- Evidence: {result.forecast.evidence_note}",
-        f"- Historical P50/P90: {result.forecast.p50_tokens}/{result.forecast.p90_tokens}",
+        f"- Median proxy: {result.forecast.p50_tokens}; one-sided budget upper: {result.forecast.budget_upper_tokens}",
         f"- Risk: {result.forecast.risk}",
         f"- Task type: {result.forecast.task_type}",
         f"- Main drivers: {', '.join(result.forecast.drivers)}",
@@ -1111,7 +1176,7 @@ def record(history_path: Path, args: argparse.Namespace) -> None:
             "instance_id": identity, "task": task, "task_type": task_type,
             "execution_profile": profile, "baseline_midpoint_tokens": baseline,
             "actual_tokens": args.actual_tokens, "split": args.split, "outcome": args.outcome,
-            "prediction": prediction,
+            "prediction": prediction, "feature_snapshot": prediction.get("feature_snapshot"),
         }
     else:
         required = [args.task, args.task_type, args.predicted_low, args.predicted_high, args.predicted_midpoint]
@@ -1225,6 +1290,11 @@ def build_parser() -> argparse.ArgumentParser:
         command_parser.add_argument("--execution-config", default=None, help="Versioned reasoning/context/tool configuration ID.")
         command_parser.add_argument("--instance-id", default=None, help="Stable task ID; excludes this task from history fitting.")
     for command_parser in [estimate_parser, compare_parser, optimize_parser, control_parser]:
+        command_parser.add_argument("--task-kind", choices=["auto", "code_repair"], default=None)
+        command_parser.add_argument("--predictor", choices=["adaptive", "legacy"], default=None)
+        command_parser.add_argument("--point-model", choices=["auto", "median", "ridge"], default=None)
+        command_parser.add_argument("--repo-signals-file", type=Path, default=None,
+                                    help="Declared counts from the exact repository snapshot; no labels.")
         command_parser.add_argument("--peak-context-tokens", type=int, default=None,
                                     help="Separately supplied peak single-request context estimate.")
     record_parser.add_argument("--prediction-file", type=Path, help="Frozen JSON from estimate; recommended for v2 history.")
@@ -1255,6 +1325,10 @@ def main(argv: Iterable[str] | None = None) -> int:
             str(option_value(args.currency, config.currency, "USD")),
             execution_profile=profile, peak_context_tokens=option_value(args.peak_context_tokens, config.peak_context_tokens),
             instance_id=args.instance_id,
+            task_kind=option_value(args.task_kind, config.task_kind),
+            predictor=option_value(args.predictor, config.predictor),
+            point_model=option_value(args.point_model, config.point_model),
+            repo_signals=load_repo_signals(args.repo_signals_file) if args.repo_signals_file else None,
         )
         if args.json:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
@@ -1280,6 +1354,10 @@ def main(argv: Iterable[str] | None = None) -> int:
             str(option_value(args.currency, config.currency, "USD")),
             execution_profile=profile, peak_context_tokens=option_value(args.peak_context_tokens, config.peak_context_tokens),
             instance_id=args.instance_id,
+            task_kind=option_value(args.task_kind, config.task_kind),
+            predictor=option_value(args.predictor, config.predictor),
+            point_model=option_value(args.point_model, config.point_model),
+            repo_signals=load_repo_signals(args.repo_signals_file) if args.repo_signals_file else None,
         )
         if args.json:
             print(json.dumps([asdict(result) for result in results], ensure_ascii=False, indent=2))
@@ -1305,6 +1383,10 @@ def main(argv: Iterable[str] | None = None) -> int:
             args.mode,
             execution_profile=profile, peak_context_tokens=option_value(args.peak_context_tokens, config.peak_context_tokens),
             instance_id=args.instance_id,
+            task_kind=option_value(args.task_kind, config.task_kind),
+            predictor=option_value(args.predictor, config.predictor),
+            point_model=option_value(args.point_model, config.point_model),
+            repo_signals=load_repo_signals(args.repo_signals_file) if args.repo_signals_file else None,
         )
         if args.json:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
@@ -1330,6 +1412,10 @@ def main(argv: Iterable[str] | None = None) -> int:
             args.mode,
             execution_profile=profile, peak_context_tokens=option_value(args.peak_context_tokens, config.peak_context_tokens),
             instance_id=args.instance_id,
+            task_kind=option_value(args.task_kind, config.task_kind),
+            predictor=option_value(args.predictor, config.predictor),
+            point_model=option_value(args.point_model, config.point_model),
+            repo_signals=load_repo_signals(args.repo_signals_file) if args.repo_signals_file else None,
         )
         if args.json:
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2))

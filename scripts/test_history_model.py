@@ -44,7 +44,7 @@ class HistoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'history.jsonl'
             path.write_text('\n'.join(json.dumps(r) for r in rows), encoding='utf-8')
-            return history.predict(path, 'debugging', PROFILE, 20000, **kwargs)
+            return history.predict_legacy(path, 'debugging', PROFILE, 20000, **kwargs)
 
     def test_empirical_median_is_not_interval_midpoint(self):
         result = self.forecast([sample(i, r) for i, r in enumerate([1, 1, 1, 2, 10])])
@@ -87,14 +87,14 @@ class HistoryTests(unittest.TestCase):
                                 sample(3, -1), sample(4, float('inf'))])
         self.assertIsNone(result.p50_tokens)
         self.assertEqual(result.fit_samples, 1)
-        result = history.predict(Path('does-not-exist'), 'debugging', PROFILE, 10000)
+        result = history.predict_legacy(Path('does-not-exist'), 'debugging', PROFILE, 10000)
         self.assertEqual(result.method, 'heuristic')
 
     def test_unknown_profile_never_pools_legacy_samples(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'history'
             path.write_text(json.dumps(sample(0)), encoding='utf-8')
-            result = history.predict(path, 'debugging', {}, 10000)
+            result = history.predict_legacy(path, 'debugging', {}, 10000)
             self.assertEqual(result.method, 'heuristic')
 
     def test_auto_partition_is_stable_for_task_identity(self):

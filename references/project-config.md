@@ -4,6 +4,9 @@ Place `.token-budget.json` in a project directory to provide defaults for estima
 
 ```json
 {
+  "task_kind": "auto",
+  "predictor": "adaptive",
+  "point_model": "auto",
   "model": "model-version",
   "agent": "harness-version",
   "execution_config": "reasoning-medium-context-v1",
@@ -30,3 +33,5 @@ Fields:
 - `currency`: display currency label.
 
 Do not commit private pricing or account-specific budget assumptions unless the project owner wants them versioned.
+
+`task_kind` may be `auto` or explicitly `code_repair`. `predictor` is `adaptive` or `legacy`. `point_model` is `auto`, `median`, or `ridge`; select on fitting/validation data only.

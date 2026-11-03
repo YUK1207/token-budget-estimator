@@ -10,6 +10,30 @@ import estimate as estimator
 
 
 class PreflightRegressionTests(unittest.TestCase):
+    def test_declared_repair_kind_and_feature_record_roundtrip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                estimator.main(['estimate', '--task', 'A surprising behavior', '--cwd', tmp,
+                                '--task-kind', 'code_repair', '--point-model', 'median',
+                                '--model', 'm', '--agent', 'a', '--execution-config', 'c', '--json'])
+            result = json.loads(output.getvalue())
+            self.assertEqual(result['task_type'], 'code_repair')
+            self.assertIn('feature_snapshot', result)
+            self.assertEqual(result['feature_snapshot']['version'], 'preflight-counts-v1')
+            self.assertIsNone(result['budget_upper_tokens'])
+
+    def test_declared_repository_counts_validate_and_replace_local_scan(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'repo.json'
+            path.write_text(json.dumps(dict(file_count=100, code_file_count=60, test_file_count=30, config_file_count=2)))
+            signals = estimator.load_repo_signals(path)
+            self.assertEqual(signals.repo_size, 'medium')
+            self.assertEqual(signals.code_file_count, 60)
+            path.write_text(json.dumps(dict(file_count=100, code_file_count=-1, test_file_count=30, config_file_count=2)))
+            with self.assertRaises(ValueError):
+                estimator.load_repo_signals(path)
+
     def test_advisory_reports_disclose_uncalibrated_forecasts(self):
         with tempfile.TemporaryDirectory() as tmp:
             result = estimator.build_preflight_controller('Fix a bug', tmp, 0, Path(tmp) / 'missing')
@@ -64,7 +88,7 @@ class PreflightRegressionTests(unittest.TestCase):
             self.assertEqual(result.p50_tokens, 10000)
             self.assertIsNone(result.input_high_tokens)
             self.assertIsNone(result.cost)
-            self.assertEqual(result.prediction_method, 'historical_quantiles')
+            self.assertEqual(result.prediction_method, 'hierarchical_median')
 
     def test_substrings_do_not_make_tasks_broad(self):
         self.assertEqual(estimator.classify_task('Fix callback error in function'), 'debugging')

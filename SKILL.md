@@ -10,11 +10,11 @@ Forecast whole-task tokens before the solver starts. Inputs are task text, light
 ## Workflow
 
 1. Summarize the task and identify the target repository.
-2. Run `scripts/estimate.py estimate` before execution. Keep `history_model.py` beside it.
+2. Run `scripts/estimate.py estimate` before execution. Keep `history_model.py` and `preflight_model.py` beside it.
 3. Supply exact model/version, harness/version and an execution configuration ID when known. Never invent identifiers to force history matching.
 4. Pass a stable canonical instance ID to exclude the current task from history.
 5. Save JSON before solving if actual usage will be recorded later.
-6. Report method, evidence limits, interval, empirical P50/P90 when available, risk and budget status. Respect existing user authorization; checks and contracts are advisory.
+6. Report method, evidence limits, interval, the median proxy and separate calibrated budget upper when available, risk and budget status. Respect existing user authorization; checks and contracts are advisory.
 7. After execution, record actual usage from the frozen prediction, with the correct outcome and partition.
 
 ```bash
@@ -35,6 +35,10 @@ Optional flags:
 --input-price-per-million <price>
 --output-price-per-million <price>
 --currency <currency>
+--task-kind <auto|code_repair>
+--point-model <auto|median|ridge>
+--predictor <adaptive|legacy>
+--repo-signals-file <exact-base-commit-counts.json>
 ```
 
 If the script cannot run, use `references/token-model.md` as an explicitly uncalibrated fallback. Do not manufacture historical quantiles or calibrated coverage manually.
@@ -42,8 +46,10 @@ If the script cannot run, use `references/token-model.md` as an explicitly uncal
 ## Interpretation
 
 - `midpoint_tokens` is the arithmetic interval midpoint, not P50.
-- P50/P90 require five matching independent fit tasks and remain empirical, unvalidated estimates.
-- Ten fit and nineteen independent calibration tasks enable the 90% marginal coverage target, assuming exchangeable tasks and consistent configuration. This is not measured accuracy.
+- The default P50 is an unvalidated median proxy, not the interval midpoint. New budget upper predictions use `budget_upper_tokens`; P90 is reserved for the legacy ratio mode.
+- Five fit tasks enable configuration-wide hierarchy. Sparse types shrink toward the configuration median. Feature regression is selected only on fit-only validation, never calibration/test labels.
+- Use `--task-kind code_repair` for an explicitly declared repository repair task. Do not infer it from a hidden answer or outcome.
+- Nineteen independent calibration tasks enable a one-sided 90% budget-coverage target under exchangeability and consistent configuration. This is not a central 90% interval or measured accuracy. With insufficient calibration the upper is a scenario, not a calibrated budget.
 - Confidence remains `low` or `unvalidated`; sample count alone does not demonstrate quality.
 - Total-only calibration leaves component token splits and cost unknown. Explain `null` values instead of inventing them.
 - Cumulative usage does not measure peak context. Without a supplied peak, context fit is `unknown`.
