@@ -1,0 +1,42 @@
+{
+  "status": "retrospective_seen_tasks_not_independent_validation",
+  "seed": 20261103,
+  "fit": 71,
+  "calibration": 43,
+  "test": 158,
+  "targets": [
+    0.8,
+    0.9,
+    0.95
+  ],
+  "fit_sizes": [
+    5,
+    10,
+    20,
+    50,
+    71
+  ],
+  "repeats": 20,
+  "bootstrap_rounds": 5000,
+  "product_revision": "785c582",
+  "product_changes": false,
+  "learning_curve": "nested fit subsets per seed; fixed 43 calibration and fixed 158 test; total history is fit size + 43",
+  "unavailable": [
+    "fresh independent tasks",
+    "configuration matching ablation: only one profile",
+    "natural solver failures: termination unknown",
+    "real monetary savings or new solver success"
+  ],
+  "hashes": {
+    "experiments/budget_validation.py": "33feda4e76ffb4a618fca2d8d2fad00c5aa0d819aa7c36d35cb99ab6102e4514",
+    "scripts/preflight_model.py": "2aaef5ee422ecaa29128ffcd98e99e6c28ddfabb384ba4740d8a4520d2d70511",
+    "scripts/task_neighbors.py": "c604c4c09201989cf76bf10fec56232c0c77e73e99993d8f5a14c2771d9a1231"
+  },
+  "data_hashes": {
+    "reference/history-adaptive.jsonl": "c1ad34ea7bdc64d02d0826c7faab259760e49638082b2311138ba4b27769dbc7",
+    "reference/predictions.jsonl": "f149d66c344704943018fc89b96d7eb4a0b69dd405bb1c36278c84ea7704815d",
+    "data/tasks.json": "b1c6e35e51b135b585ee361267ab7d5323a335fe2b4433aef8a7318ed033fa40",
+    "data/summaries.json": "cb527e20cff060d0995138eee4d8b823113ddfd2407721970a96fcdc76c51ef5",
+    "sweep/predictions.jsonl": "9cf3ad606bf2f84f187d5cd8f8d7e8e4fa0989c675b3a0582e230aa1a53e2b31"
+  }
+}

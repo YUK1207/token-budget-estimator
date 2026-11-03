@@ -143,3 +143,5 @@ A [158-task held-out historical evaluation](experiments/results/swe-preflight-v2
 A [fixed-protocol external comparison](experiments/results/external-baselines-v3.md) adds plain LightGBM and an official public TokenCast task-launch tree adapter on the same 158 previously seen tasks. The adapter was close to the median with a paired uncertainty interval spanning zero; no superiority to the full TokenCast paper is established. [Reproduction setup](experiments/EXTERNAL_BASELINES.md).
 
 The [repository/text improvement and broader comparison](experiments/results/model-sweep-v4.md) adds six comparison methods and separates numeric-only from text/repository-aware inputs. The new candidates did not improve this retrospective benchmark; fit-only validation correctly retained hierarchy. [Reproduction setup](experiments/MODEL_SWEEP.md).
+
+The [token and budget validation](experiments/results/budget-validation-v5.md) adds paired error comparisons, 80/90/95% budget diagnostics, and a history-size curve. It reuses the inspected benchmark and does not establish monetary savings. [Protocol and reproduction](experiments/BUDGET_VALIDATION.md).
