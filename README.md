@@ -136,3 +136,5 @@ Synthetic tests verify calculations, CLI behavior, task isolation and regression
 ## Offline evaluation
 
 A [158-task held-out historical evaluation](experiments/results/swe-preflight-v2.md) achieved 89.87% one-sided upper coverage. The selector retained the median baseline; the ridge candidate did not establish a point-quality gain. Point WAPE remained 61.3%. These success-only historical results do not establish new solve rates, generalization or token savings.
+
+A [fixed-protocol external comparison](experiments/results/external-baselines-v3.md) adds plain LightGBM and an official public TokenCast task-launch tree adapter on the same 158 previously seen tasks. The adapter was close to the median with a paired uncertainty interval spanning zero; no superiority to the full TokenCast paper is established. [Reproduction setup](experiments/EXTERNAL_BASELINES.md).
